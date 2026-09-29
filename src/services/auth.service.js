@@ -22,7 +22,11 @@ const loginStaff = async ({ identifier, password }) => {
   return {
     data: {
       user: {
-        id: staff.staffId,
+        // GET /tasks and GET /staff both key a staff member by their Mongo _id
+        // (returned as `id`), not by the human-readable staffId (EMP-xxx) — so
+        // `id` here must match that, or task.assignee.id === user.id never
+        // matches and the staff member's own tasks never show up.
+        id: staff.id ?? staff._id,
         staffId: staff.staffId,
         name: [staff.firstName, staff.lastName].filter(Boolean).join(' '),
         email: staff.email,
