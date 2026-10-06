@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { RecipientStack, StatusPill } from '@/features/broadcast/components/NoticeTable'
-import { useBroadcastStore } from '@/features/broadcast/store/broadcastStore'
 import { formatNoticeDate } from '@/features/broadcast/utils/broadcast.utils'
+import { useNoticesList } from '@/hooks/useNotices'
 import { useSyncedTasks } from '@/hooks/useTasks'
 import { avatarColorFor, initialsOf, isAdminAssignee, isTaskOverdue } from '@/features/tasks/utils/task.utils'
 import { EmptyRow, PanelHeader } from '@/features/dashboard/components/DashboardPanel'
@@ -13,7 +13,10 @@ const LIST_LIMIT = 3
 
 export default function Dashboard() {
   const { tasks, isLoading, isError } = useSyncedTasks()
-  const notices = useBroadcastStore((state) => state.notices)
+  const { data: noticesData, isLoading: noticesLoading, isError: noticesError } = useNoticesList({
+    page: 1,
+    limit: LIST_LIMIT,
+  })
 
   const staffSummary = useMemo(() => {
     const byStaff = new Map()
@@ -36,10 +39,9 @@ export default function Dashboard() {
       .sort((a, b) => b.delayed - a.delayed || b.total - a.total)
   }, [tasks])
 
-  const latestNotices = useMemo(
-    () => [...notices].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, LIST_LIMIT),
-    [notices],
-  )
+  // The API already sorts newest-first and this only ever fetches LIST_LIMIT
+  // notices, so no client-side sorting/slicing is needed.
+  const latestNotices = noticesData?.data ?? []
 
   return (
     <>
@@ -132,8 +134,16 @@ export default function Dashboard() {
 
           <section className="overflow-hidden rounded-xl border border-border-light bg-surface-container-lowest shadow-sm">
             <PanelHeader icon="campaign" title="Broadcast / Notice" to={ROUTES.ADMIN_BROADCAST} />
-            {latestNotices.length === 0 && <EmptyRow>No notices sent yet.</EmptyRow>}
-            {latestNotices.map((notice) => (
+            {noticesLoading ? (
+              <EmptyRow>Loading notices…</EmptyRow>
+            ) : noticesError ? (
+              <EmptyRow>Couldn't load notices. Please refresh the page.</EmptyRow>
+            ) : latestNotices.length === 0 ? (
+              <EmptyRow>No notices sent yet.</EmptyRow>
+            ) : null}
+            {!noticesLoading &&
+              !noticesError &&
+              latestNotices.map((notice) => (
               <Link
                 key={notice.id}
                 to={ROUTES.ADMIN_BROADCAST}
@@ -153,8 +163,8 @@ export default function Dashboard() {
                     <span className="block truncate text-label-md text-on-surface-variant">{notice.message}</span>
                   )}
                   <span className="mt-1.5 flex flex-wrap items-center gap-2 text-label-md text-on-surface-variant">
-                    <RecipientStack recipientIds={notice.recipientIds} />
-                    {notice.recipientIds.length} staff · {formatNoticeDate(notice.createdAt)}
+                    <RecipientStack recipients={notice.recipients} />
+                    {notice.recipients.length} staff · {formatNoticeDate(notice.createdAt)}
                   </span>
                 </span>
               </Link>

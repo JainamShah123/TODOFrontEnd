@@ -14,6 +14,7 @@ import {
   avatarColorFor,
   canEditTask,
   capitalize,
+  formatDateTime,
   formatShortDate,
   formatTime,
   getDisplayStatus,
@@ -26,15 +27,6 @@ import {
 import { useAuthStore } from '@/store/authStore'
 import { Role } from '@/constants/roles'
 import { ROUTES } from '@/constants/routes'
-
-const formatDateTime = (isoString) =>
-  new Date(isoString).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
 
 function SectionLabel({ children }) {
   return <p className="mb-unit-sm text-label-bold font-bold tracking-[0.05em] text-on-surface-variant uppercase">{children}</p>
@@ -54,6 +46,7 @@ export default function TaskDetail() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const { tasks, isLoading, isError } = useSyncedTasks()
+  const updateTask = useTaskStore((state) => state.updateTask)
   const updateTaskStatusLocal = useTaskStore((state) => state.updateTaskStatus)
   const setDelayReason = useTaskStore((state) => state.setDelayReason)
   const deleteTask = useTaskStore((state) => state.deleteTask)
@@ -124,12 +117,18 @@ export default function TaskDetail() {
   // dialog) can decide where to display it.
   const commitStatusChange = async (nextStatus) => {
     const previousStatus = task.status
+    const previousCompletedAt = task.completedAt
     updateTaskStatusLocal(task.id, nextStatus)
     try {
-      await updateStatus.mutateAsync({ taskId: task.id, status: nextStatus })
+      const response = await updateStatus.mutateAsync({ taskId: task.id, status: nextStatus })
+      // The optimistic update above only set `status` — completedAt comes back
+      // from the server (set/cleared there), so reconcile it from the real
+      // response rather than computing it client-side.
+      updateTask(task.id, { completedAt: response?.data?.task?.completionAt ?? null })
       return null
     } catch (error) {
       updateTaskStatusLocal(task.id, previousStatus)
+      updateTask(task.id, { completedAt: previousCompletedAt })
       return error?.response?.data?.message ?? 'Unable to update status. Please try again.'
     }
   }
@@ -372,6 +371,9 @@ export default function TaskDetail() {
             <span className={overdue ? 'text-status-delayed' : undefined}>{formatShortDate(task.dueDate)}</span>
           </DetailRow>
           <DetailRow label="Due time">{formatTime(task.time) ?? '—'}</DetailRow>
+          {task.status === TASK_STATUS.COMPLETED && task.completedAt && (
+            <DetailRow label="Completed on">{formatDateTime(task.completedAt)}</DetailRow>
+          )}
           <DetailRow label="Timeline">
             <span>{timelineLabel}</span>
             {task.timeline === 'custom' && task.customDates?.[0]?.date && (

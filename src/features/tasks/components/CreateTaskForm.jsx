@@ -14,6 +14,8 @@ import { useStaffOptions } from '@/hooks/useStaff'
 import { useCreateTask } from '@/hooks/useTasks'
 import { useTaskStore } from '@/features/tasks/store/taskStore'
 import { mapApiTask } from '@/features/tasks/utils/task.utils'
+import { useAuthStore } from '@/store/authStore'
+import { Role } from '@/constants/roles'
 import { ROUTES } from '@/constants/routes'
 import Toast from '@/components/common/Toast'
 import SelectField from '@/features/tasks/components/SelectField'
@@ -23,6 +25,9 @@ const ATTACHMENT_TYPES = '.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg'
 
 export default function CreateTaskForm() {
   const navigate = useNavigate()
+  const user = useAuthStore((state) => state.user)
+  const isStaff = user?.role === Role.STAFF
+  const homeRoute = isStaff ? ROUTES.STAFF_DASHBOARD : ROUTES.ADMIN_DASHBOARD
   const createTask = useCreateTask()
   const addTask = useTaskStore((state) => state.addTask)
   const [toast, setToast] = useState(null)
@@ -37,7 +42,10 @@ export default function CreateTaskForm() {
       title: '',
       description: '',
       broker: '',
-      assignedTo: '',
+      // Staff can only ever create a task assigned to themselves (enforced
+      // server-side too) — fixing this up front means the field doesn't need
+      // to be registered/rendered as an input for a staff user at all.
+      assignedTo: isStaff ? (user?.id ?? '') : '',
       timeline: '',
       time: '',
       customDates: [],
@@ -47,7 +55,7 @@ export default function CreateTaskForm() {
   })
 
   const timeline = watch('timeline')
-  const { data: staffOptions = [], isLoading: staffLoading, isError: staffError } = useStaffOptions()
+  const { data: staffOptions = [], isLoading: staffLoading, isError: staffError } = useStaffOptions({ enabled: !isStaff })
   const assigneeOptions = [ADMIN_ASSIGNEE_OPTION, ...staffOptions]
 
   const onSubmit = async (values) => {
@@ -69,7 +77,7 @@ export default function CreateTaskForm() {
       })
       if (response?.data?.task) addTask(mapApiTask(response.data.task))
       setToast({ message: 'Task Created Successfully.', tone: 'success' })
-      setTimeout(() => navigate(ROUTES.ADMIN_DASHBOARD), 1200)
+      setTimeout(() => navigate(homeRoute), 1200)
     } catch {
       // surfaced below via createTask.isError
     }
@@ -135,18 +143,29 @@ export default function CreateTaskForm() {
       <div className="h-px w-full bg-border-light" />
 
       <div className="grid grid-cols-1 gap-unit-lg md:grid-cols-2">
-        <SelectField
-          label="Assigned To"
-          required
-          placeholder={staffLoading ? 'Loading staff…' : 'Select Staff Member'}
-          options={assigneeOptions}
-          disabled={staffLoading}
-          error={
-            errors.assignedTo?.message ??
-            (staffError ? "Couldn't load staff members. You can still assign the task to yourself." : undefined)
-          }
-          {...register('assignedTo')}
-        />
+        {isStaff ? (
+          <div className="space-y-2">
+            <label className="block text-label-bold font-bold text-on-surface">
+              Assigned To <span className="text-error">*</span>
+            </label>
+            <p className="w-full rounded-lg border border-border-light bg-surface-subtle px-4 py-2.5 text-body-md text-on-surface-variant">
+              {user?.name ?? 'You'} (You)
+            </p>
+          </div>
+        ) : (
+          <SelectField
+            label="Assigned To"
+            required
+            placeholder={staffLoading ? 'Loading staff…' : 'Select Staff Member'}
+            options={assigneeOptions}
+            disabled={staffLoading}
+            error={
+              errors.assignedTo?.message ??
+              (staffError ? "Couldn't load staff members. You can still assign the task to yourself." : undefined)
+            }
+            {...register('assignedTo')}
+          />
+        )}
         <SelectField
           label="Timeline"
           required
@@ -209,7 +228,7 @@ export default function CreateTaskForm() {
       <div className="flex flex-col items-center justify-end gap-4 border-t border-border-light pt-unit-lg md:flex-row">
         <button
           type="button"
-          onClick={() => navigate(ROUTES.ADMIN_DASHBOARD)}
+          onClick={() => navigate(homeRoute)}
           className="w-full rounded-lg border border-border-light bg-transparent px-6 py-2.5 text-label-bold font-bold text-on-surface-variant transition-colors hover:bg-surface-subtle hover:text-on-surface focus:outline-none focus:ring-2 focus:ring-border-light md:w-auto"
         >
           Cancel

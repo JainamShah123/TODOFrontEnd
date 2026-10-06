@@ -13,10 +13,11 @@ export const useStaffList = ({ page, limit }) =>
     placeholderData: (previousData) => previousData,
   })
 
-export const useStaffOptions = () =>
+export const useStaffOptions = ({ enabled = true } = {}) =>
   useQuery({
     queryKey: ['staff', 'options'],
     queryFn: () => staffService.list({ page: 1, limit: 100 }),
+    enabled,
     retry: (failureCount, error) => failureCount < 2 && !(error?.response?.status < 500),
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,

@@ -2,13 +2,24 @@ import { useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { createNoticeSchema } from '@/features/broadcast/schemas/notice.schema'
-import { STAFF_MEMBERS } from '@/features/staff/data/staff.data'
+import { useStaffList } from '@/hooks/useStaff'
+import { useCreateNotice, useUpdateNotice } from '@/hooks/useNotices'
 import { avatarColorFor, initialsOf } from '@/features/broadcast/utils/broadcast.utils'
 import { ROUTES } from '@/constants/routes'
+import Toast from '@/components/common/Toast'
 
-export default function ComposeNoticeForm({ onSend }) {
+// Used for both creating a notice and (when `notice` is passed) editing one —
+// same fields either way, so edit mode just pre-populates them and saves via PUT.
+export default function ComposeNoticeForm({ notice }) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const isEdit = Boolean(notice)
+  const createNotice = useCreateNotice()
+  const updateNotice = useUpdateNotice()
+  const mutation = isEdit ? updateNotice : createNotice
+  const [toast, setToast] = useState(null)
   const [recipientSearch, setRecipientSearch] = useState('')
   const {
     register,
@@ -18,19 +29,37 @@ export default function ComposeNoticeForm({ onSend }) {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(createNoticeSchema),
-    defaultValues: { title: '', message: '', recipientIds: [] },
+    defaultValues: {
+      title: notice?.title ?? '',
+      message: notice?.message ?? '',
+      recipientIds: notice?.recipients.map((recipient) => recipient.id) ?? [],
+    },
   })
 
   const message = watch('message')
+  const { data, isLoading: staffLoading, isError: staffError } = useStaffList({ page: 1, limit: 50 })
+  const staffMembers = useMemo(() => data?.data ?? [], [data])
 
   const filteredStaff = useMemo(() => {
     const query = recipientSearch.trim().toLowerCase()
-    if (!query) return STAFF_MEMBERS
-    return STAFF_MEMBERS.filter((member) => `${member.firstName} ${member.lastName}`.toLowerCase().includes(query))
-  }, [recipientSearch])
+    if (!query) return staffMembers
+    return staffMembers.filter((member) => `${member.firstName} ${member.lastName}`.toLowerCase().includes(query))
+  }, [staffMembers, recipientSearch])
 
-  const onSubmit = (values) => {
-    onSend(values)
+  const onSubmit = async (values) => {
+    try {
+      if (isEdit) {
+        await updateNotice.mutateAsync({ noticeId: notice.id, payload: values })
+        // Make sure the list (and the dashboard panel) show the edited notice.
+        queryClient.invalidateQueries({ queryKey: ['notices'] })
+      } else {
+        await createNotice.mutateAsync(values)
+      }
+      setToast({ message: isEdit ? 'Notice Updated Successfully.' : 'Notice Sent Successfully.', tone: 'success' })
+      setTimeout(() => navigate(ROUTES.ADMIN_BROADCAST), 1200)
+    } catch {
+      // surfaced below via mutation.isError
+    }
   }
 
   return (
@@ -70,7 +99,7 @@ export default function ComposeNoticeForm({ onSend }) {
         name="recipientIds"
         render={({ field }) => {
           const selected = field.value ?? []
-          const allIds = STAFF_MEMBERS.map((member) => member.id)
+          const allIds = staffMembers.map((member) => member.id)
           const allSelected = allIds.length > 0 && allIds.every((id) => selected.includes(id))
 
           const toggleOne = (id) => {
@@ -115,7 +144,17 @@ export default function ComposeNoticeForm({ onSend }) {
               </div>
 
               <div className="max-h-60 space-y-0.5 overflow-y-auto rounded-lg border border-border-light p-1.5">
-                {filteredStaff.map((member) => (
+                {staffLoading && (
+                  <p className="p-3 text-center text-label-md text-on-surface-variant">Loading staff…</p>
+                )}
+                {staffError && !staffLoading && (
+                  <p className="p-3 text-center text-label-md text-error">
+                    Couldn't load staff members. Please refresh the page.
+                  </p>
+                )}
+                {!staffLoading &&
+                  !staffError &&
+                  filteredStaff.map((member) => (
                   <label
                     key={member.id}
                     className="flex cursor-pointer items-center gap-3 rounded-lg p-2 hover:bg-surface-subtle"
@@ -146,7 +185,7 @@ export default function ComposeNoticeForm({ onSend }) {
                     />
                   </label>
                 ))}
-                {filteredStaff.length === 0 && (
+                {!staffLoading && !staffError && filteredStaff.length === 0 && (
                   <p className="p-3 text-center text-label-md text-on-surface-variant">No staff match your search.</p>
                 )}
               </div>
@@ -157,10 +196,19 @@ export default function ComposeNoticeForm({ onSend }) {
         }}
       />
 
+      {mutation.isError && (
+        <p className="text-sm text-error">
+          {mutation.error?.response?.data?.message ??
+            (isEdit ? 'Unable to update the notice. Please try again.' : 'Unable to send the notice. Please try again.')}
+        </p>
+      )}
+
       <div className="flex flex-col items-center justify-between gap-4 border-t border-border-light pt-unit-lg md:flex-row">
         <p className="flex items-center gap-1.5 text-label-md text-on-surface-variant">
           <span className="material-symbols-outlined text-[16px] text-primary">info</span>
-          Will be sent to staff immediately once submitted.
+          {isEdit
+            ? 'Staff removed from the list will no longer see this notice.'
+            : 'Will be sent to staff immediately once submitted.'}
         </p>
         <div className="flex w-full gap-3 md:w-auto">
           <button
@@ -172,14 +220,22 @@ export default function ComposeNoticeForm({ onSend }) {
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || mutation.isPending || mutation.isSuccess}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-container px-6 py-2.5 text-label-bold font-bold text-on-primary shadow-sm transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-70 md:w-auto"
           >
-            <span className="material-symbols-outlined text-[18px]">send</span>
-            {isSubmitting ? 'Sending…' : 'Send Notice'}
+            <span className="material-symbols-outlined text-[18px]">{isEdit ? 'check' : 'send'}</span>
+            {isSubmitting || mutation.isPending
+              ? isEdit
+                ? 'Saving…'
+                : 'Sending…'
+              : isEdit
+                ? 'Save Changes'
+                : 'Send Notice'}
           </button>
         </div>
       </div>
+
+      {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={() => setToast(null)} />}
     </form>
   )
 }

@@ -2,8 +2,8 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyRow, Panel, PanelHeader } from '@/features/dashboard/components/DashboardPanel'
 import PrivateNotesPanel from '@/features/dashboard/components/PrivateNotesPanel'
-import { useBroadcastStore } from '@/features/broadcast/store/broadcastStore'
 import { formatNoticeDate } from '@/features/broadcast/utils/broadcast.utils'
+import { useNoticesList } from '@/hooks/useNotices'
 import { useSyncedTasks } from '@/hooks/useTasks'
 import {
   STATUS_META,
@@ -24,7 +24,13 @@ const taskOrder = (task) => (task.status === 'completed' ? 2 : isTaskOverdue(tas
 export default function StaffDashboard() {
   const user = useAuthStore((state) => state.user)
   const { tasks, isLoading, isError } = useSyncedTasks()
-  const notices = useBroadcastStore((state) => state.notices)
+  // The server already scopes this to active notices sent to the caller, and
+  // sorts newest-first, so no client-side filtering/sorting is needed here.
+  const { data: noticesData, isLoading: noticesLoading, isError: noticesError } = useNoticesList({
+    page: 1,
+    limit: NOTICE_LIMIT,
+  })
+  const myNotices = noticesData?.data ?? []
 
   const myTasks = useMemo(
     () =>
@@ -39,15 +45,6 @@ export default function StaffDashboard() {
 
   const pendingCount = myTasks.filter((task) => task.status !== 'completed').length
   const delayedCount = myTasks.filter((task) => isTaskOverdue(task)).length
-
-  const myNotices = useMemo(
-    () =>
-      notices
-        .filter((notice) => notice.status === 'active' && notice.recipientIds.includes(user?.id))
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, NOTICE_LIMIT),
-    [notices, user?.id],
-  )
 
   const firstName = user?.name?.split(' ')[0] ?? 'there'
   const todayLabel = new Date().toLocaleDateString('en-US', {
@@ -148,8 +145,16 @@ export default function StaffDashboard() {
 
           <Panel>
             <PanelHeader icon="campaign" title="Broadcast / Notice" />
-            {myNotices.length === 0 && <EmptyRow>You're all caught up — no notices right now.</EmptyRow>}
-            {myNotices.map((notice) => (
+            {noticesLoading ? (
+              <EmptyRow>Loading notices…</EmptyRow>
+            ) : noticesError ? (
+              <EmptyRow>Couldn't load notices. Please refresh the page.</EmptyRow>
+            ) : myNotices.length === 0 ? (
+              <EmptyRow>You're all caught up — no notices right now.</EmptyRow>
+            ) : null}
+            {!noticesLoading &&
+              !noticesError &&
+              myNotices.map((notice) => (
               <div key={notice.id} className="flex gap-3 border-b border-border-light px-unit-lg py-unit-md last:border-b-0">
                 <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] bg-status-scheduled/10 text-status-scheduled">
                   <span className="material-symbols-outlined text-[17px]">campaign</span>

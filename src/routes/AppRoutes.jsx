@@ -10,8 +10,11 @@ import StaffDirectory from '@/pages/admin/StaffDirectory'
 import Schedule from '@/pages/admin/Schedule'
 import Broadcast from '@/pages/admin/Broadcast'
 import CreateNotice from '@/pages/admin/CreateNotice'
+import NoticeDetail from '@/pages/admin/NoticeDetail'
+import EditNotice from '@/pages/admin/EditNotice'
 import PrivateNotes from '@/pages/PrivateNotes'
 import StaffDashboard from '@/pages/staff/StaffDashboard'
+import StaffCreateTask from '@/pages/staff/CreateTask'
 import StaffTaskBoard from '@/pages/staff/StaffTaskBoard'
 import StaffProfile from '@/pages/staff/StaffProfile'
 import NotFound from '@/pages/errors/NotFound'
@@ -42,10 +45,13 @@ export default function AppRoutes() {
             <Route path={ROUTES.ADMIN_SCHEDULE} element={<Schedule />} />
             <Route path={ROUTES.ADMIN_BROADCAST} element={<Broadcast />} />
             <Route path={ROUTES.ADMIN_BROADCAST_CREATE} element={<CreateNotice />} />
+            <Route path={ROUTES.ADMIN_BROADCAST_DETAIL} element={<NoticeDetail />} />
+            <Route path={ROUTES.ADMIN_BROADCAST_EDIT} element={<EditNotice />} />
           </Route>
 
           <Route element={<RoleRoute allowedRoles={[Role.STAFF]} />}>
             <Route path={ROUTES.STAFF_DASHBOARD} element={<StaffDashboard />} />
+            <Route path={ROUTES.STAFF_TASKS_CREATE} element={<StaffCreateTask />} />
             <Route path={ROUTES.STAFF_TASK_BOARD} element={<StaffTaskBoard />} />
             <Route path={ROUTES.STAFF_TASK_DETAIL} element={<TaskDetail />} />
             <Route path={ROUTES.STAFF_PROFILE} element={<StaffProfile />} />

@@ -96,6 +96,28 @@ export const formatTime = (time) => {
   return new Date(2000, 0, 1, hours, minutes).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
+// Single-line "MMM d, yyyy, h:mm AM/PM" display for a full ISO timestamp
+// (completedAt, delayReasonAt) — used in prose-style detail rows.
+export const formatDateTime = (isoString) =>
+  new Date(isoString).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+
+// Date and time as separate strings (same formatting as formatShortDate/formatTime)
+// for stacking a full ISO timestamp across two lines in a table cell.
+export const formatDateTimeParts = (isoString) => {
+  if (!isoString) return null
+  const date = new Date(isoString)
+  return {
+    date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    time: date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+  }
+}
+
 export const initialsOf = (name) =>
   name
     .split(' ')
@@ -137,6 +159,7 @@ export const mapApiTask = (raw) => ({
   dueDate: raw.dueDate,
   time: raw.time,
   createdAt: raw.createdAt,
+  completedAt: raw.completionAt ?? null,
   delayReason: null,
   delayReasonAt: null,
 })

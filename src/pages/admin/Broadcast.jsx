@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import NoticeTable from '@/features/broadcast/components/NoticeTable'
-import { useBroadcastStore } from '@/features/broadcast/store/broadcastStore'
+import { useDeleteNotice, useNoticesList, useUpdateNoticeStatus } from '@/hooks/useNotices'
+import ConfirmDialog from '@/components/common/ConfirmDialog'
+import Toast from '@/components/common/Toast'
+import Pagination from '@/components/common/Pagination'
 import { ROUTES } from '@/constants/routes'
 
 const STATUS_FILTER_OPTIONS = [
@@ -10,13 +14,27 @@ const STATUS_FILTER_OPTIONS = [
   { key: 'inactive', label: 'Deactivated' },
 ]
 
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 50]
+
 export default function Broadcast() {
   const navigate = useNavigate()
-  const notices = useBroadcastStore((state) => state.notices)
-  const toggleNoticeStatus = useBroadcastStore((state) => state.toggleNoticeStatus)
+  const queryClient = useQueryClient()
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [noticeToDelete, setNoticeToDelete] = useState(null)
+  const [toast, setToast] = useState(null)
+  const deleteNotice = useDeleteNotice()
+  const updateNoticeStatus = useUpdateNoticeStatus()
 
+  const { data, isLoading, isError } = useNoticesList({ page, limit })
+  const pagination = data?.pagination
+  const notices = useMemo(() => data?.data ?? [], [data])
+  const togglingNoticeId = updateNoticeStatus.isPending ? updateNoticeStatus.variables?.noticeId : null
+
+  // Search/status filtering isn't sent to the API yet, so this only narrows
+  // the page currently loaded, not the full list — acceptable for now.
   const filteredNotices = useMemo(() => {
     const query = search.trim().toLowerCase()
     return notices.filter((notice) => {
@@ -25,6 +43,39 @@ export default function Broadcast() {
       return true
     })
   }, [notices, search, statusFilter])
+
+  const handlePageSizeChange = (event) => {
+    setLimit(Number(event.target.value))
+    setPage(1)
+  }
+
+  const handleToggleStatus = async (notice) => {
+    const nextStatus = notice.status === 'active' ? 'inactive' : 'active'
+    try {
+      await updateNoticeStatus.mutateAsync({ noticeId: notice.id, status: nextStatus })
+      // Refetch every cached notice list (this page, and the dashboard's panel).
+      queryClient.invalidateQueries({ queryKey: ['notices'] })
+    } catch (error) {
+      setToast({
+        message: error?.response?.data?.message ?? 'Unable to update the notice status. Please try again.',
+        tone: 'error',
+      })
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    try {
+      await deleteNotice.mutateAsync(noticeToDelete.id)
+      // Refetch every cached notice list (this page, and the dashboard's panel).
+      queryClient.invalidateQueries({ queryKey: ['notices'] })
+      // Deleting the only notice on a later page would otherwise leave us on an empty page.
+      if (notices.length === 1 && page > 1) setPage(page - 1)
+      setNoticeToDelete(null)
+      setToast({ message: 'Notice Deleted Successfully.', tone: 'success' })
+    } catch {
+      // surfaced in the dialog via deleteNotice.isError
+    }
+  }
 
   return (
     <>
@@ -64,13 +115,59 @@ export default function Broadcast() {
             </option>
           ))}
         </select>
+        <select
+          value={limit}
+          onChange={handlePageSizeChange}
+          className="h-9 rounded-lg border border-border-light bg-surface-container-lowest px-3 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
+        >
+          {PAGE_SIZE_OPTIONS.map((size) => (
+            <option key={size} value={size}>
+              {size} per page
+            </option>
+          ))}
+        </select>
       </div>
 
-      <NoticeTable notices={filteredNotices} onToggleStatus={toggleNoticeStatus} />
+      <NoticeTable
+        notices={filteredNotices}
+        onToggleStatus={handleToggleStatus}
+        togglingNoticeId={togglingNoticeId}
+        onEdit={(notice) => navigate(`${ROUTES.ADMIN_BROADCAST}/${notice.id}/edit`, { state: { notice } })}
+        onDelete={(notice) => {
+          deleteNotice.reset()
+          setNoticeToDelete(notice)
+        }}
+        isLoading={isLoading}
+        isError={isError}
+      />
 
-      <p className="text-label-md text-on-surface-variant">
-        Showing {filteredNotices.length} of {notices.length} notices
-      </p>
+      <div className="flex flex-col items-center justify-between gap-unit-sm sm:flex-row">
+        <p className="text-label-md text-on-surface-variant">
+          Showing {filteredNotices.length} of {pagination?.total ?? 0} notices
+        </p>
+        {pagination && pagination.totalPages > 1 && (
+          <Pagination page={pagination.page} totalPages={pagination.totalPages} onPageChange={setPage} />
+        )}
+      </div>
+
+      {noticeToDelete && (
+        <ConfirmDialog
+          title="Delete Notice"
+          description={`Are you sure you want to delete "${noticeToDelete.title}"? It will also disappear for everyone it was sent to. This action cannot be undone.`}
+          confirmLabel="Yes, Delete"
+          cancelLabel="No"
+          error={
+            deleteNotice.isError
+              ? (deleteNotice.error?.response?.data?.message ?? 'Unable to delete the notice. Please try again.')
+              : null
+          }
+          isConfirming={deleteNotice.isPending}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setNoticeToDelete(null)}
+        />
+      )}
+
+      {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={() => setToast(null)} />}
     </>
   )
 }

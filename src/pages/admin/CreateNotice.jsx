@@ -1,16 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import ComposeNoticeForm from '@/features/broadcast/components/ComposeNoticeForm'
-import { useBroadcastStore } from '@/features/broadcast/store/broadcastStore'
 import { ROUTES } from '@/constants/routes'
 
 export default function CreateNotice() {
   const navigate = useNavigate()
-  const addNotice = useBroadcastStore((state) => state.addNotice)
-
-  const handleSend = (values) => {
-    addNotice(values)
-    navigate(ROUTES.ADMIN_BROADCAST)
-  }
 
   return (
     <>
@@ -36,7 +29,7 @@ export default function CreateNotice() {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border-light bg-surface-container-lowest shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
-        <ComposeNoticeForm onSend={handleSend} />
+        <ComposeNoticeForm />
       </div>
     </>
   )
