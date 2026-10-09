@@ -2,14 +2,19 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import TaskTable from '@/features/tasks/components/TaskTable'
 import EditTaskModal from '@/features/tasks/components/EditTaskModal'
-import { useSyncedTasks } from '@/hooks/useTasks'
-import { STATUS_META, getDisplayStatus, isAdminAssignee } from '@/features/tasks/utils/task.utils'
+import TaskPager from '@/features/tasks/components/TaskPager'
+import TaskRangeFilter from '@/features/tasks/components/TaskRangeFilter'
+import { INITIAL_RANGE_FILTER, toApiFilters } from '@/features/tasks/utils/dateRange.utils'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useTasksPage } from '@/hooks/useTasks'
+import { STATUS_META } from '@/features/tasks/utils/task.utils'
 import { ROUTES } from '@/constants/routes'
 
+// `assigneeType` is what the API filters on; `count` is the key of the matching number in its `counts`.
 const OWNER_FILTERS = [
-  { key: 'all', label: 'All Tasks' },
-  { key: 'mine', label: 'My Tasks' },
-  { key: 'staff', label: 'Staff Tasks' },
+  { key: 'all', label: 'All Tasks', assigneeType: undefined, count: 'all' },
+  { key: 'mine', label: 'My Tasks', assigneeType: 'admin', count: 'admin' },
+  { key: 'staff', label: 'Staff Tasks', assigneeType: 'staff', count: 'staff' },
 ]
 
 const STATUS_FILTER_OPTIONS = [
@@ -21,31 +26,45 @@ export default function TaskBoard() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const staffFilter = searchParams.get('staff')
-  const { tasks, isLoading, isError } = useSyncedTasks()
+  const [rangeFilter, setRangeFilter] = useState(INITIAL_RANGE_FILTER)
   const [search, setSearch] = useState('')
   const [ownerFilter, setOwnerFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [page, setPage] = useState(1)
   const [editingTask, setEditingTask] = useState(null)
 
-  const mineCount = useMemo(() => tasks.filter((task) => isAdminAssignee(task)).length, [tasks])
-  const staffCount = tasks.length - mineCount
+  const debouncedSearch = useDebouncedValue(search.trim())
+  const ownerOption = OWNER_FILTERS.find((filter) => filter.key === ownerFilter)
 
-  const staffFilterName = useMemo(
-    () => (staffFilter ? tasks.find((task) => task.assignee?.id === staffFilter)?.assignee?.name : null),
-    [tasks, staffFilter],
+  // A custom range waits until both dates are picked and valid; nothing is requested before that.
+  const apiFilters = toApiFilters(rangeFilter)
+  const { tasks, pagination, range, counts, isLoading, isFetching, isError } = useTasksPage(
+    {
+      ...(apiFilters ?? { range: rangeFilter.range }),
+      search: debouncedSearch,
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      assigneeType: ownerOption.assigneeType,
+      assigneeId: staffFilter ?? undefined,
+      page,
+    },
+    { enabled: Boolean(apiFilters) },
   )
 
-  const filteredTasks = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return tasks.filter((task) => {
-      if (query && !task.title.toLowerCase().includes(query)) return false
-      if (staffFilter && task.assignee?.id !== staffFilter) return false
-      if (ownerFilter === 'mine' && !isAdminAssignee(task)) return false
-      if (ownerFilter === 'staff' && isAdminAssignee(task)) return false
-      if (statusFilter !== 'all' && getDisplayStatus(task) !== statusFilter) return false
-      return true
-    })
-  }, [tasks, search, ownerFilter, statusFilter, staffFilter])
+  // Any change to what's being listed starts again from page 1.
+  const changeFilter = (setter) => (value) => {
+    setter(value)
+    setPage(1)
+  }
+
+  // If tasks drop out (deleted, status changed) and the page we're on no longer exists, step back (state adjusted while rendering, as React recommends).
+  if (pagination && pagination.totalPages > 0 && page > pagination.totalPages) setPage(pagination.totalPages)
+
+  // Only the current page's tasks are loaded, so the name comes from them; if this page has none of
+  // that person's tasks the chip just says so.
+  const staffFilterName = useMemo(
+    () => (staffFilter ? (tasks.find((task) => task.assignee?.id === staffFilter)?.assignee?.name ?? 'Selected staff') : null),
+    [tasks, staffFilter],
+  )
 
   return (
     <>
@@ -66,17 +85,19 @@ export default function TaskBoard() {
         </button>
       </div>
 
+      <TaskRangeFilter value={rangeFilter} onChange={changeFilter(setRangeFilter)} resolved={range} />
+
       <div className="flex flex-wrap items-center gap-unit-md">
         <input
           type="text"
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => changeFilter(setSearch)(event.target.value)}
           placeholder="Search tasks by title..."
           className="h-9 min-w-[200px] flex-1 rounded-lg border border-border-light bg-surface-container-lowest px-4 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
         />
         <select
           value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
+          onChange={(event) => changeFilter(setStatusFilter)(event.target.value)}
           className="h-9 rounded-lg border border-border-light bg-surface-container-lowest px-3 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
         >
           {STATUS_FILTER_OPTIONS.map((option) => (
@@ -90,7 +111,7 @@ export default function TaskBoard() {
             <button
               key={filter.key}
               type="button"
-              onClick={() => setOwnerFilter(filter.key)}
+              onClick={() => changeFilter(setOwnerFilter)(filter.key)}
               className={`rounded px-3 py-1.5 text-label-md font-bold whitespace-nowrap transition-colors ${
                 ownerFilter === filter.key
                   ? 'bg-surface-container text-on-surface'
@@ -99,17 +120,20 @@ export default function TaskBoard() {
             >
               {filter.label}{' '}
               <span className="opacity-70 tabular-nums">
-                {filter.key === 'all' ? tasks.length : filter.key === 'mine' ? mineCount : staffCount}
+                {counts?.[filter.count] ?? '–'}
               </span>
             </button>
           ))}
         </div>
         {staffFilter && (
           <span className="inline-flex items-center gap-2 rounded-full bg-secondary-container py-1.5 pr-1.5 pl-3 text-label-md font-bold text-on-secondary-container">
-            Assignee: {staffFilterName ?? staffFilter}
+            Assignee: {staffFilterName}
             <button
               type="button"
-              onClick={() => setSearchParams({}, { replace: true })}
+              onClick={() => {
+                setSearchParams({}, { replace: true })
+                setPage(1)
+              }}
               aria-label="Clear assignee filter"
               className="flex h-5 w-5 items-center justify-center rounded-full bg-on-secondary-container/15 hover:bg-on-secondary-container/25"
             >
@@ -126,11 +150,11 @@ export default function TaskBoard() {
         </span>
       </div>
 
-      <TaskTable tasks={filteredTasks} onEdit={setEditingTask} isLoading={isLoading} isError={isError} />
+      <div className={isFetching && !isLoading ? 'opacity-70 transition-opacity' : 'transition-opacity'}>
+        <TaskTable tasks={tasks} onEdit={setEditingTask} isLoading={isLoading} isError={isError} />
+      </div>
 
-      <p className="text-label-md text-on-surface-variant">
-        Showing {filteredTasks.length} of {tasks.length} tasks
-      </p>
+      <TaskPager pagination={pagination} onPageChange={setPage} />
 
       {editingTask && (
         <EditTaskModal task={editingTask} onClose={() => setEditingTask(null)} />
