@@ -4,7 +4,7 @@ import { EmptyRow, Panel, PanelHeader } from '@/features/dashboard/components/Da
 import PrivateNotesPanel from '@/features/dashboard/components/PrivateNotesPanel'
 import { formatNoticeDate } from '@/features/broadcast/utils/broadcast.utils'
 import { useNoticesList } from '@/hooks/useNotices'
-import { useSyncedTasks } from '@/hooks/useTasks'
+import { useTasksInRange } from '@/hooks/useTasks'
 import {
   STATUS_META,
   formatShortDate,
@@ -13,17 +13,20 @@ import {
   isAssignedTo,
   isTaskOverdue,
 } from '@/features/tasks/utils/task.utils'
+import { addDays } from '@/features/tasks/utils/dateRange.utils'
 import { useAuthStore } from '@/store/authStore'
 import { ROUTES } from '@/constants/routes'
 
-const TASK_LIMIT = 8
 const NOTICE_LIMIT = 3
 
-const taskOrder = (task) => (task.status === 'completed' ? 2 : isTaskOverdue(task) ? 0 : 1)
+// The dashboard only shows these three days. The API works out which days they are (server time zone),
+// so the browser's clock/time zone can't put a task under the wrong heading.
+const DASHBOARD_RANGE = { range: 'yesterday_to_tomorrow' }
+const DAY_LABELS = ['Yesterday', 'Today', 'Tomorrow']
 
 export default function StaffDashboard() {
   const user = useAuthStore((state) => state.user)
-  const { tasks, isLoading, isError } = useSyncedTasks()
+  const { tasks, range, isLoading, isError } = useTasksInRange(DASHBOARD_RANGE)
   // The server already scopes this to active notices sent to the caller, and
   // sorts newest-first, so no client-side filtering/sorting is needed here.
   const { data: noticesData, isLoading: noticesLoading, isError: noticesError } = useNoticesList({
@@ -36,12 +39,18 @@ export default function StaffDashboard() {
     () =>
       tasks
         .filter((task) => isAssignedTo(task, user?.id))
-        .sort(
-          (a, b) =>
-            taskOrder(a) - taskOrder(b) || a.dueDate.localeCompare(b.dueDate) || (a.time ?? '').localeCompare(b.time ?? ''),
-        ),
+        .sort((a, b) => a.dueDate.localeCompare(b.dueDate) || (a.time ?? '').localeCompare(b.time ?? '')),
     [tasks, user?.id],
   )
+
+  // One group per day, in order, skipping days with nothing due.
+  const dayGroups = useMemo(() => {
+    if (!range?.from) return []
+    return DAY_LABELS.map((label, index) => {
+      const date = addDays(range.from, index)
+      return { label, date, tasks: myTasks.filter((task) => task.dueDate === date) }
+    }).filter((group) => group.tasks.length > 0)
+  }, [range, myTasks])
 
   const pendingCount = myTasks.filter((task) => task.status !== 'completed').length
   const delayedCount = myTasks.filter((task) => isTaskOverdue(task)).length
@@ -76,7 +85,7 @@ export default function StaffDashboard() {
           <PanelHeader
             icon="assignment"
             title="My Tasks"
-            subtitle={`${myTasks.length} total · ${pendingCount} pending · ${delayedCount} delayed`}
+            subtitle={`Yesterday, today & tomorrow · ${myTasks.length} total · ${pendingCount} pending · ${delayedCount} delayed`}
             to={ROUTES.STAFF_TASK_BOARD}
             linkLabel="View Task Board"
           />
@@ -86,7 +95,7 @@ export default function StaffDashboard() {
           ) : isError ? (
             <EmptyRow>Couldn't load tasks. Please refresh the page.</EmptyRow>
           ) : myTasks.length === 0 ? (
-            <EmptyRow>No tasks are assigned to you yet.</EmptyRow>
+            <EmptyRow>You have no tasks due yesterday, today or tomorrow.</EmptyRow>
           ) : (
             <table className="w-full table-fixed border-collapse text-left">
               <thead>
@@ -97,45 +106,58 @@ export default function StaffDashboard() {
                   <th className="w-36 py-unit-sm pr-unit-lg pl-1 text-right font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-light text-body-md text-on-surface">
-                {myTasks.slice(0, TASK_LIMIT).map((task) => {
-                  const overdue = isTaskOverdue(task)
-                  const status = STATUS_META[getDisplayStatus(task)]
-                  return (
-                    <tr key={task.id} className="transition-colors hover:bg-surface-subtle">
-                      <td className="py-unit-md pr-2 pl-unit-lg">
-                        <Link
-                          to={`${ROUTES.STAFF_TASK_BOARD}/${task.id}`}
-                          className="block font-bold text-on-surface hover:text-primary hover:underline sm:truncate"
-                        >
-                          {task.title}
-                        </Link>
-                        <span
-                          className={`block text-label-md sm:hidden ${overdue ? 'font-bold text-status-delayed' : 'text-on-surface-variant'}`}
+              {dayGroups.map((group) => (
+                <tbody key={group.date} className="divide-y divide-border-light text-body-md text-on-surface">
+                  <tr className="bg-surface-subtle">
+                    <th
+                      colSpan={4}
+                      className="py-unit-xs pr-unit-lg pl-unit-lg text-left text-label-bold font-bold tracking-[0.05em] text-on-surface-variant uppercase"
+                    >
+                      {group.label} · {formatShortDate(group.date)}
+                      <span className="ml-2 font-medium normal-case">
+                        {group.tasks.length} {group.tasks.length === 1 ? 'task' : 'tasks'}
+                      </span>
+                    </th>
+                  </tr>
+                  {group.tasks.map((task) => {
+                    const overdue = isTaskOverdue(task)
+                    const status = STATUS_META[getDisplayStatus(task)]
+                    return (
+                      <tr key={task.id} className="transition-colors hover:bg-surface-subtle">
+                        <td className="py-unit-md pr-2 pl-unit-lg">
+                          <Link
+                            to={`${ROUTES.STAFF_TASK_BOARD}/${task.id}`}
+                            className="block font-bold text-on-surface hover:text-primary hover:underline sm:truncate"
+                          >
+                            {task.title}
+                          </Link>
+                          <span
+                            className={`block text-label-md sm:hidden ${overdue ? 'font-bold text-status-delayed' : 'text-on-surface-variant'}`}
+                          >
+                            {formatShortDate(task.dueDate)}
+                          </span>
+                        </td>
+                        <td
+                          className={`hidden px-1 whitespace-nowrap sm:table-cell ${overdue ? 'font-bold text-status-delayed' : 'text-on-surface-variant'}`}
                         >
                           {formatShortDate(task.dueDate)}
-                        </span>
-                      </td>
-                      <td
-                        className={`hidden px-1 whitespace-nowrap sm:table-cell ${overdue ? 'font-bold text-status-delayed' : 'text-on-surface-variant'}`}
-                      >
-                        {formatShortDate(task.dueDate)}
-                      </td>
-                      <td className="hidden px-1 whitespace-nowrap text-on-surface-variant sm:table-cell">
-                        {formatTime(task.time) ?? '—'}
-                      </td>
-                      <td className="pr-unit-lg pl-1 text-right">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-label-md font-bold whitespace-nowrap ${status.bgClass} ${status.textClass}`}
-                        >
-                          <span className={`h-1.5 w-1.5 rounded-full ${status.dotClass}`} />
-                          {status.label}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
+                        </td>
+                        <td className="hidden px-1 whitespace-nowrap text-on-surface-variant sm:table-cell">
+                          {formatTime(task.time) ?? '—'}
+                        </td>
+                        <td className="pr-unit-lg pl-1 text-right">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-label-md font-bold whitespace-nowrap ${status.bgClass} ${status.textClass}`}
+                          >
+                            <span className={`h-1.5 w-1.5 rounded-full ${status.dotClass}`} />
+                            {status.label}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              ))}
             </table>
           )}
         </Panel>

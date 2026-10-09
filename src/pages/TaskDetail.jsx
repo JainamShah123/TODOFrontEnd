@@ -5,7 +5,7 @@ import EditTaskModal from '@/features/tasks/components/EditTaskModal'
 import DelayReasonModal from '@/features/tasks/components/DelayReasonModal'
 import { TIMELINE_OPTIONS } from '@/features/tasks/data/task-options.data'
 import { useTaskStore } from '@/features/tasks/store/taskStore'
-import { useDeleteTask, useSyncedTasks, useUpdateTaskStatus } from '@/hooks/useTasks'
+import { useDeleteTask, useTask, useUpdateTaskStatus } from '@/hooks/useTasks'
 import {
   PRIORITY_DOT_CLASS,
   STATUS_META,
@@ -45,7 +45,7 @@ export default function TaskDetail() {
   const { taskId } = useParams()
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
-  const { tasks, isLoading, isError } = useSyncedTasks()
+  const { task, isLoading, isError } = useTask(taskId)
   const updateTask = useTaskStore((state) => state.updateTask)
   const updateTaskStatusLocal = useTaskStore((state) => state.updateTaskStatus)
   const setDelayReason = useTaskStore((state) => state.setDelayReason)
@@ -63,7 +63,6 @@ export default function TaskDetail() {
   const isStaff = user?.role === Role.STAFF
   const boardRoute = isStaff ? ROUTES.STAFF_TASK_BOARD : ROUTES.ADMIN_TASK_BOARD
 
-  const task = tasks.find((item) => item.id === taskId)
   const canView = task && (!isStaff || isAssignedTo(task, user?.id))
 
   if (isLoading) {
@@ -84,7 +83,7 @@ export default function TaskDetail() {
           </h2>
           <p className="text-body-md text-on-surface-variant">
             {isError
-              ? 'There was a problem loading the task list. Please try again.'
+              ? 'There was a problem loading the task. Please try again.'
               : "It may have been deleted, or it isn't assigned to you."}
           </p>
         </div>
