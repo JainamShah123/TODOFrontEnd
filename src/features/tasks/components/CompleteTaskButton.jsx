@@ -6,7 +6,8 @@ import { TASK_STATUS } from '@/features/tasks/utils/task.utils'
 
 // The one action a user takes on a task: mark it done. Whether it then reads "Completed" or
 // "Completed Late" is worked out from the due date, not chosen. Completing is final, so it asks first.
-export default function CompleteTaskButton({ task }) {
+// variant="icon" is an empty tick circle for a table column; the default is a labelled button.
+export default function CompleteTaskButton({ task, variant = 'button' }) {
   const updateStatus = useUpdateTaskStatus()
   const updateTask = useTaskStore((state) => state.updateTask)
   const [isOpen, setIsOpen] = useState(false)
@@ -29,17 +30,32 @@ export default function CompleteTaskButton({ task }) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          setError(null)
-          setIsOpen(true)
-        }}
-        className="flex items-center gap-2 rounded-lg bg-status-completed px-4 py-2 text-label-bold font-bold whitespace-nowrap text-white transition-opacity hover:opacity-90"
-      >
-        <span className="material-symbols-outlined text-[16px]">check</span>
-        Complete
-      </button>
+      {variant === 'icon' ? (
+        <button
+          type="button"
+          onClick={() => {
+            setError(null)
+            setIsOpen(true)
+          }}
+          title="Mark as completed"
+          aria-label={`Mark “${task.title}” as completed`}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-status-completed/10 hover:text-status-completed"
+        >
+          <span className="material-symbols-outlined text-[24px]">radio_button_unchecked</span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            setError(null)
+            setIsOpen(true)
+          }}
+          className="flex items-center gap-2 rounded-lg bg-status-completed px-4 py-2 text-label-bold font-bold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+        >
+          <span className="material-symbols-outlined text-[16px]">check</span>
+          Complete
+        </button>
+      )}
       {isOpen && (
         <ConfirmDialog
           title="Mark this task as completed?"

@@ -16,15 +16,13 @@ export const useStaffList = ({ page, limit }) =>
 export const useStaffOptions = ({ enabled = true } = {}) =>
   useQuery({
     queryKey: ['staff', 'options'],
-    queryFn: () => staffService.list({ page: 1, limit: 100 }),
+    queryFn: staffService.options,
     enabled,
     retry: (failureCount, error) => failureCount < 2 && !(error?.response?.status < 500),
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     select: (response) =>
-      response.data
-        .filter((member) => member.status === 'active')
-        .map((member) => ({ value: member.id, label: `${member.firstName} ${member.lastName}` })),
+      response.data.map((member) => ({ value: member.id, label: `${member.firstName} ${member.lastName}` })),
   })
 
 export const useDeleteStaff = () =>

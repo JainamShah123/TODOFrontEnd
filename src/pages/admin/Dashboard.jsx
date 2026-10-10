@@ -70,13 +70,13 @@ export default function Dashboard() {
           ) : (
             <table className="w-full table-fixed border-collapse text-left">
               <thead>
-                <tr className="border-b border-border-light bg-surface-subtle text-label-bold font-bold tracking-[0.05em] text-on-surface-variant uppercase">
+                <tr className="border-b border-border-light bg-surface-subtle text-[13px] font-bold tracking-wide text-on-surface-variant uppercase">
                   <th className="py-unit-sm pr-2 pl-unit-lg font-medium">Staff</th>
-                  <th className="w-14 px-2 py-unit-sm font-medium">Total</th>
-                  <th className="hidden w-14 px-2 py-unit-sm font-medium sm:table-cell">Done</th>
-                  <th className="hidden w-[72px] px-2 py-unit-sm font-medium sm:table-cell">Pending</th>
-                  <th className="w-[72px] px-2 py-unit-sm font-medium">Delayed</th>
-                  <th className="w-20 py-unit-sm pr-unit-lg pl-2 text-right font-medium whitespace-nowrap">Done %</th>
+                  <th className="w-16 px-2 py-unit-sm text-right font-medium">Total</th>
+                  <th className="hidden w-16 px-2 py-unit-sm text-right font-medium sm:table-cell">Done</th>
+                  <th className="hidden w-24 px-2 py-unit-sm text-right font-medium sm:table-cell">Pending</th>
+                  <th className="w-24 px-2 py-unit-sm text-right font-medium">Delayed</th>
+                  <th className="w-24 py-unit-sm pr-unit-lg pl-2 text-right font-medium whitespace-nowrap">Done %</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-light text-body-md text-on-surface tabular-nums">
@@ -91,7 +91,7 @@ export default function Dashboard() {
                           {initialsOf(row.name)}
                         </span>
                         <Link
-                          to={`${ROUTES.ADMIN_TASK_BOARD}?staff=${encodeURIComponent(row.id)}`}
+                          to={`${ROUTES.ADMIN_TASK_BOARD}?to=${encodeURIComponent(`staff:${row.id}`)}`}
                           title={`View ${row.name}'s tasks`}
                           className="truncate font-bold text-on-surface hover:text-primary hover:underline"
                         >
@@ -99,14 +99,14 @@ export default function Dashboard() {
                         </Link>
                       </div>
                     </td>
-                    <td className="px-2">{row.total}</td>
-                    <td className={`hidden px-2 sm:table-cell ${row.done ? 'font-bold text-status-completed' : 'text-on-surface-variant/60'}`}>
+                    <td className="px-2 text-right">{row.total}</td>
+                    <td className={`hidden px-2 text-right sm:table-cell ${row.done ? 'font-bold text-status-completed' : 'text-on-surface-variant/60'}`}>
                       {row.done}
                     </td>
-                    <td className={`hidden px-2 sm:table-cell ${row.pending ? 'font-bold text-status-pending' : 'text-on-surface-variant/60'}`}>
+                    <td className={`hidden px-2 text-right sm:table-cell ${row.pending ? 'font-bold text-status-pending' : 'text-on-surface-variant/60'}`}>
                       {row.pending}
                     </td>
-                    <td className={`px-2 ${row.delayed ? 'font-bold text-status-delayed' : 'text-on-surface-variant/60'}`}>
+                    <td className={`px-2 text-right ${row.delayed ? 'font-bold text-status-delayed' : 'text-on-surface-variant/60'}`}>
                       {row.delayed}
                     </td>
                     <td

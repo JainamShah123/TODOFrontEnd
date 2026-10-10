@@ -294,6 +294,11 @@ export default function TaskDetail() {
               {assigneeName}
             </span>
           </DetailRow>
+          <DetailRow label="Created by">
+            {task.createdBy
+              ? `${task.createdBy.name ?? 'Unknown'}${String(task.createdBy.id) === String(user?.id) ? ' (you)' : ''}`
+              : '—'}
+          </DetailRow>
           <DetailRow label="Due date">
             <span className={overdue ? 'text-status-delayed' : undefined}>{formatShortDate(task.dueDate)}</span>
           </DetailRow>

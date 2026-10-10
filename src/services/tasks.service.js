@@ -16,11 +16,12 @@ const buildTaskFormData = ({ customDates, attachment, ...fields }) => {
 const LIST_ALL_PAGE_SIZE = 100
 const LIST_ALL_MAX_PAGES = 50
 
-// `filters` is { range, from, to } - see GET /tasks. Empty values are left out of the request.
+// `filters` is any GET /tasks filter. Missing (undefined/null) values are left out of the request; an
+// empty string is sent, since for some filters it means something (brokers "" = no broker).
 const listPage = ({ page = 1, limit = 50, ...filters } = {}) => {
   const params = { page, limit }
   Object.entries(filters).forEach(([key, value]) => {
-    if (value) params[key] = value
+    if (value !== undefined && value !== null) params[key] = value
   })
   return apiClient.get('/tasks', { params }).then((res) => res.data)
 }
@@ -28,6 +29,14 @@ const listPage = ({ page = 1, limit = 50, ...filters } = {}) => {
 export const tasksService = {
   create: (payload) => apiClient.post('/tasks', buildTaskFormData(payload)).then((res) => res.data),
   list: listPage,
+  // Values (with counts) for the task board's column filters, under the same filters as the list.
+  facets: (filters = {}) => {
+    const params = {}
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) params[key] = value
+    })
+    return apiClient.get('/tasks/facets', { params }).then((res) => res.data)
+  },
   get: (taskId) => apiClient.get(`/tasks/${taskId}`).then((res) => res.data),
   // The task board and both dashboards work out their counts, filters and per-staff summaries in the
   // browser from the full list, so a single page of 50 silently dropped everything past the 50th task

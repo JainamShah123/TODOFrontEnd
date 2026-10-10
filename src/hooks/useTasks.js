@@ -10,6 +10,7 @@ const useInvalidateTaskLists = () => {
   const queryClient = useQueryClient()
   return () => {
     queryClient.invalidateQueries({ queryKey: ['tasks', 'list'] })
+    queryClient.invalidateQueries({ queryKey: ['tasks', 'facets'] })
   }
 }
 
@@ -153,7 +154,7 @@ export const useTask = (taskId) => {
 // so a long list never loads in one go. 25 sits in the 20-30 the client asked for.
 export const TASKS_PAGE_SIZE = 25
 
-// One page of a task board. `filters` is { status, search, assigneeType, assigneeId, page }.
+// One page of a task board. `filters` is any GET /tasks filter plus `page`.
 // The previous page stays on screen while the next one loads, so paging doesn't flash empty.
 export const useTasksPage = (filters, { enabled = true } = {}) => {
   const params = { ...filters, limit: TASKS_PAGE_SIZE }
@@ -181,3 +182,14 @@ export const useTasksPage = (filters, { enabled = true } = {}) => {
     isError: query.isError,
   }
 }
+
+// The values (with counts) each task board column filter offers, under the board's other filters.
+// Every task mutation invalidates it along with the lists.
+export const useTaskFacets = (filters, { enabled = true } = {}) =>
+  useQuery({
+    queryKey: ['tasks', 'facets', filters],
+    queryFn: () => tasksService.facets(filters),
+    enabled,
+    placeholderData: (previousData) => previousData,
+    select: (response) => response.data,
+  })

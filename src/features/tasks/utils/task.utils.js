@@ -188,6 +188,7 @@ export const mapApiTask = (raw) => ({
   attachmentUrl: raw.attachmentUrl ?? null,
   broker: raw.broker ?? '',
   assignee: raw.assignee,
+  createdBy: raw.createdBy ? { type: raw.createdByType, id: raw.createdBy, name: raw.createdByName ?? null } : null,
   priority: raw.priority,
   status: raw.status === TASK_STATUS.COMPLETED ? TASK_STATUS.COMPLETED : TASK_STATUS.TODO,
   displayStatus: raw.displayStatus ?? null,

@@ -1,5 +1,4 @@
-export const ADMIN_ASSIGNEE_OPTION = { value: 'admin', label: 'Assign To Admin' }
-export const ADMIN_ASSIGNEE_ID = '6aa4036fac73e628c27d3554'
+export const ADMIN_ASSIGNEE_OPTION = { value: 'admin', label: 'Assign To Me' }
 
 export const TIMELINE_OPTIONS = [
   { value: 'daily', label: 'Daily (Mon-Fri)' },
