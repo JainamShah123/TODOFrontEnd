@@ -16,7 +16,10 @@ export default function CompleteTaskButton({ task, variant = 'button' }) {
   const handleConfirm = async () => {
     setError(null)
     try {
-      const response = await updateStatus.mutateAsync({ taskId: task.id, status: TASK_STATUS.COMPLETED })
+      const response = await updateStatus.mutateAsync({
+        taskId: task.id,
+        status: TASK_STATUS.COMPLETED,
+      })
       updateTask(task.id, {
         status: TASK_STATUS.COMPLETED,
         completedAt: response?.data?.task?.completionAt ?? new Date().toISOString(),

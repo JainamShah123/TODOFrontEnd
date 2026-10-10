@@ -5,7 +5,14 @@ import EditTaskModal from '@/features/tasks/components/EditTaskModal'
 import DelayReasonModal from '@/features/tasks/components/DelayReasonModal'
 import { TIMELINE_OPTIONS } from '@/features/tasks/data/task-options.data'
 import { useTaskStore } from '@/features/tasks/store/taskStore'
-import { useDeleteTask, useTask, useUpdateTaskStatus } from '@/hooks/useTasks'
+import {
+  useDeleteTask,
+  useTask,
+  useUpdateChecklistItem,
+  useUpdateTaskStatus,
+} from '@/hooks/useTasks'
+import RichTextView from '@/features/tasks/components/RichTextView'
+import { describeRepeatRule } from '@/features/tasks/utils/repeatRule'
 import {
   PRIORITY_DOT_CLASS,
   STATUS_META,
@@ -29,14 +36,20 @@ import { Role } from '@/constants/roles'
 import { ROUTES } from '@/constants/routes'
 
 function SectionLabel({ children }) {
-  return <p className="mb-unit-sm text-label-bold font-bold tracking-[0.05em] text-on-surface-variant uppercase">{children}</p>
+  return (
+    <p className="mb-unit-sm text-label-bold font-bold tracking-[0.05em] text-on-surface-variant uppercase">
+      {children}
+    </p>
+  )
 }
 
 function DetailRow({ label, children }) {
   return (
     <div className="flex items-center justify-between gap-unit-md border-b border-border-light py-4 last:border-b-0">
       <span className="shrink-0 text-label-md text-on-surface-variant">{label}</span>
-      <span className="flex flex-col items-end text-right text-body-md font-bold text-on-surface">{children}</span>
+      <span className="flex flex-col items-end text-right text-body-md font-bold text-on-surface">
+        {children}
+      </span>
     </div>
   )
 }
@@ -50,6 +63,7 @@ export default function TaskDetail() {
   const setDelayReason = useTaskStore((state) => state.setDelayReason)
   const deleteTask = useTaskStore((state) => state.deleteTask)
   const updateStatus = useUpdateTaskStatus()
+  const updateChecklist = useUpdateChecklistItem()
   const deleteTaskMutation = useDeleteTask()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isReasonOpen, setIsReasonOpen] = useState(false)
@@ -74,7 +88,9 @@ export default function TaskDetail() {
   if (!canView) {
     return (
       <div className="flex flex-col items-center gap-unit-md rounded-xl border border-border-light bg-surface-container-lowest p-unit-xl text-center shadow-sm">
-        <span className="material-symbols-outlined text-[40px] text-on-surface-variant">search_off</span>
+        <span className="material-symbols-outlined text-[40px] text-on-surface-variant">
+          search_off
+        </span>
         <div>
           <h2 className="font-[var(--font-headline)] text-headline-sm text-on-surface">
             {isError ? "Couldn't load this task" : 'Task not found'}
@@ -102,23 +118,37 @@ export default function TaskDetail() {
   const overdue = isTaskOverdue(task)
   // Only the assignee can complete a task, and completing it is final.
   const canComplete =
-    (isStaff ? isAssignedTo(task, user?.id) : isAdminAssignee(task)) && task.status !== TASK_STATUS.COMPLETED
+    (isStaff ? isAssignedTo(task, user?.id) : isAdminAssignee(task)) &&
+    task.status !== TASK_STATUS.COMPLETED
   const editable = !isStaff && canEditTask(task)
-  const timelineLabel = TIMELINE_OPTIONS.find((option) => option.value === task.timeline)?.label ?? task.timeline
+  const timelineLabel =
+    TIMELINE_OPTIONS.find((option) => option.value === task.timeline)?.label ?? task.timeline
+  // Admins can tick any task's checklist, staff only their own (the API checks the same).
+  const canTick = !isStaff || isAssignedTo(task, user?.id)
+  const handleToggleItem = async (index, checked) => {
+    const response = await updateChecklist.mutateAsync({ taskId: task.id, index, checked })
+    if (response?.data?.task)
+      updateTask(task.id, { description: response.data.task.description ?? '' })
+  }
   const showReason = overdue || Boolean(task.delayReason)
   const reasonAuthor = isStaff ? 'You' : assigneeName
 
   const handleConfirmComplete = async () => {
     setCompleteConfirmError(null)
     try {
-      const response = await updateStatus.mutateAsync({ taskId: task.id, status: TASK_STATUS.COMPLETED })
+      const response = await updateStatus.mutateAsync({
+        taskId: task.id,
+        status: TASK_STATUS.COMPLETED,
+      })
       updateTask(task.id, {
         status: TASK_STATUS.COMPLETED,
         completedAt: response?.data?.task?.completionAt ?? new Date().toISOString(),
       })
       setIsCompleteConfirmOpen(false)
     } catch (error) {
-      setCompleteConfirmError(error?.response?.data?.message ?? 'Could not update the task. Please try again.')
+      setCompleteConfirmError(
+        error?.response?.data?.message ?? 'Could not update the task. Please try again.',
+      )
     }
   }
 
@@ -129,7 +159,9 @@ export default function TaskDetail() {
       deleteTask(task.id)
       navigate(boardRoute, { replace: true })
     } catch (error) {
-      setDeleteError(error?.response?.data?.message ?? 'Unable to delete the task. Please try again.')
+      setDeleteError(
+        error?.response?.data?.message ?? 'Unable to delete the task. Please try again.',
+      )
     }
   }
 
@@ -188,7 +220,9 @@ export default function TaskDetail() {
                 title={editable ? 'Edit task' : 'Locked once completed'}
                 className="flex items-center gap-2 rounded-lg border border-border-light bg-surface-container-lowest px-4 py-2 text-label-bold font-bold text-on-surface transition-colors hover:bg-surface-subtle disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-[16px]">{editable ? 'edit' : 'lock'}</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  {editable ? 'edit' : 'lock'}
+                </span>
                 Edit
               </button>
               <button
@@ -211,7 +245,16 @@ export default function TaskDetail() {
         <section className="divide-y divide-border-light rounded-xl border border-border-light bg-surface-container-lowest shadow-sm">
           <div className="p-unit-lg">
             <SectionLabel>Description</SectionLabel>
-            <p className="max-w-[62ch] text-body-md text-on-surface">{task.description || 'No description added.'}</p>
+            {task.description ? (
+              <div className="max-w-[70ch] text-body-md">
+                <RichTextView
+                  value={task.description}
+                  onToggleItem={canTick ? handleToggleItem : undefined}
+                />
+              </div>
+            ) : (
+              <p className="text-body-md text-on-surface-variant">No description added.</p>
+            )}
           </div>
 
           {task.attachmentUrl && (
@@ -223,7 +266,9 @@ export default function TaskDetail() {
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-lg border border-border-light bg-surface-subtle px-4 py-2 text-body-md font-semibold text-on-surface hover:bg-surface-container"
               >
-                <span className="material-symbols-outlined text-[24px] text-primary">description</span>
+                <span className="material-symbols-outlined text-[24px] text-primary">
+                  description
+                </span>
                 {attachmentFileName(task.attachmentUrl)}
               </a>
             </div>
@@ -253,9 +298,7 @@ export default function TaskDetail() {
                     </span>
                     {task.delayReason ? 'Edit reason' : 'Add reason'}
                   </button>
-                ) : (
-                  null
-                )}
+                ) : null}
               </div>
               {task.delayReason ? (
                 <div className="rounded-xl border border-status-delayed/30 bg-status-delayed/10 p-unit-md">
@@ -300,29 +343,38 @@ export default function TaskDetail() {
               : '—'}
           </DetailRow>
           <DetailRow label="Due date">
-            <span className={overdue ? 'text-status-delayed' : undefined}>{formatShortDate(task.dueDate)}</span>
+            <span className={overdue ? 'text-status-delayed' : undefined}>
+              {task.dueDate ? formatShortDate(task.dueDate) : 'No deadline'}
+            </span>
           </DetailRow>
-          <DetailRow label="Due time">{formatTime(task.time) ?? '—'}</DetailRow>
+          {task.dueDate && <DetailRow label="Due time">{formatTime(task.time) ?? '—'}</DetailRow>}
           {task.status === TASK_STATUS.COMPLETED && task.completedAt && (
             <DetailRow label="Completed on">{formatDateTime(task.completedAt)}</DetailRow>
           )}
           <DetailRow label="Timeline">
             <span>{timelineLabel}</span>
-            {task.timeline === 'custom' && task.customDates?.[0]?.date && (
+            {task.timeline === 'custom' && task.customDates?.length > 0 && (
               <span className="text-label-md font-medium text-on-surface-variant">
-                {formatShortDate(task.customDates[0].date)}
+                {task.customDates.map((entry) => formatShortDate(entry.date)).join(', ')}
+              </span>
+            )}
+            {task.timeline === 'repeat' && task.recurrence && (
+              <span className="text-label-md font-medium text-on-surface-variant">
+                {describeRepeatRule(task.recurrence)}
               </span>
             )}
           </DetailRow>
         </aside>
       </div>
 
-      {isEditOpen && (
-        <EditTaskModal task={task} onClose={() => setIsEditOpen(false)} />
-      )}
+      {isEditOpen && <EditTaskModal task={task} onClose={() => setIsEditOpen(false)} />}
 
       {isReasonOpen && (
-        <DelayReasonModal task={task} onClose={() => setIsReasonOpen(false)} onSave={setDelayReason} />
+        <DelayReasonModal
+          task={task}
+          onClose={() => setIsReasonOpen(false)}
+          onSave={setDelayReason}
+        />
       )}
 
       {isDeleteOpen && (

@@ -1,17 +1,27 @@
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { StatusPill } from '@/features/broadcast/components/NoticeTable'
-import { avatarColorFor, formatNoticeDate, initialsOf } from '@/features/broadcast/utils/broadcast.utils'
+import {
+  avatarColorFor,
+  formatNoticeDate,
+  initialsOf,
+} from '@/features/broadcast/utils/broadcast.utils'
 import { ROUTES } from '@/constants/routes'
 
 function SectionLabel({ children }) {
-  return <p className="mb-unit-sm text-label-bold font-bold tracking-[0.05em] text-on-surface-variant uppercase">{children}</p>
+  return (
+    <p className="mb-unit-sm text-label-bold font-bold tracking-[0.05em] text-on-surface-variant uppercase">
+      {children}
+    </p>
+  )
 }
 
 function DetailRow({ label, children }) {
   return (
     <div className="flex items-center justify-between gap-unit-md border-b border-border-light py-4 last:border-b-0">
       <span className="shrink-0 text-label-md text-on-surface-variant">{label}</span>
-      <span className="flex flex-col items-end text-right text-body-md font-bold text-on-surface">{children}</span>
+      <span className="flex flex-col items-end text-right text-body-md font-bold text-on-surface">
+        {children}
+      </span>
     </div>
   )
 }
@@ -24,9 +34,13 @@ export default function NoticeDetail() {
   if (!notice) {
     return (
       <div className="flex flex-col items-center gap-unit-md rounded-xl border border-border-light bg-surface-container-lowest p-unit-xl text-center shadow-sm">
-        <span className="material-symbols-outlined text-[40px] text-on-surface-variant">search_off</span>
+        <span className="material-symbols-outlined text-[40px] text-on-surface-variant">
+          search_off
+        </span>
         <div>
-          <h2 className="font-[var(--font-headline)] text-headline-sm text-on-surface">Notice details unavailable</h2>
+          <h2 className="font-[var(--font-headline)] text-headline-sm text-on-surface">
+            Notice details unavailable
+          </h2>
           <p className="text-body-md text-on-surface-variant">
             Open this notice from the Broadcast / Notice list to see its details.
           </p>
@@ -44,7 +58,10 @@ export default function NoticeDetail() {
   return (
     <>
       <nav className="flex flex-wrap items-center gap-2 text-label-md text-on-surface-variant">
-        <Link to={ROUTES.ADMIN_BROADCAST} className="flex items-center gap-2 font-bold hover:text-on-surface">
+        <Link
+          to={ROUTES.ADMIN_BROADCAST}
+          className="flex items-center gap-2 font-bold hover:text-on-surface"
+        >
           <span className="material-symbols-outlined text-[16px]">arrow_back</span>
           Broadcast / Notice
         </Link>
@@ -65,7 +82,9 @@ export default function NoticeDetail() {
         <section className="divide-y divide-border-light rounded-xl border border-border-light bg-surface-container-lowest shadow-sm">
           <div className="p-unit-lg">
             <SectionLabel>Message</SectionLabel>
-            <p className="max-w-[62ch] text-body-md text-on-surface">{notice.message || 'No message added.'}</p>
+            <p className="max-w-[62ch] text-body-md text-on-surface">
+              {notice.message || 'No message added.'}
+            </p>
           </div>
 
           <div className="p-unit-lg">
@@ -85,8 +104,12 @@ export default function NoticeDetail() {
                       {initialsOf(firstName, rest.join(' '))}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate text-body-md font-bold text-on-surface">{recipient.name}</p>
-                      <p className="truncate text-label-md text-on-surface-variant">{recipient.staffId}</p>
+                      <p className="truncate text-body-md font-bold text-on-surface">
+                        {recipient.name}
+                      </p>
+                      <p className="truncate text-label-md text-on-surface-variant">
+                        {recipient.staffId}
+                      </p>
                     </div>
                   </div>
                 )

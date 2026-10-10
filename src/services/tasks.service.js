@@ -1,12 +1,13 @@
 import { apiClient } from '@/services/apiClient'
 
-const buildTaskFormData = ({ customDates, attachment, ...fields }) => {
+const buildTaskFormData = ({ customDates, recurrence, attachment, ...fields }) => {
   const formData = new FormData()
 
   Object.entries(fields).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') formData.append(key, value)
   })
   if (customDates?.length) formData.append('customDates', JSON.stringify(customDates))
+  if (recurrence) formData.append('recurrence', JSON.stringify(recurrence))
   if (attachment) formData.append('attachment', attachment)
 
   return formData
@@ -59,12 +60,16 @@ export const tasksService = {
     const data = [...byId.values()]
     return { ...first, data, pagination: { ...first.pagination, page: 1, limit: data.length } }
   },
+  // Ticks or unticks one checklist item (0-based, in document order) in the task's description.
+  updateChecklistItem: (taskId, index, checked) =>
+    apiClient.patch(`/tasks/${taskId}/checklist`, { index, checked }).then((res) => res.data),
   updateStatus: (taskId, status) =>
     apiClient.patch(`/tasks/${taskId}/status`, { status }).then((res) => res.data),
   // PUT replaces the task's editable fields wholesale — a field left out of the
   // payload is cleared server-side, EXCEPT attachment: omitting it preserves the
   // existing file (the API has no way to remove an attachment once set, only
   // replace it), so buildTaskFormData only appends it when a new file is chosen.
-  update: (taskId, payload) => apiClient.put(`/tasks/${taskId}`, buildTaskFormData(payload)).then((res) => res.data),
+  update: (taskId, payload) =>
+    apiClient.put(`/tasks/${taskId}`, buildTaskFormData(payload)).then((res) => res.data),
   remove: (taskId) => apiClient.delete(`/tasks/${taskId}`).then((res) => res.data),
 }

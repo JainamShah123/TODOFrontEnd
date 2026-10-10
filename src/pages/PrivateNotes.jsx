@@ -2,7 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import NotesList from '@/features/notes/components/NotesList'
 import NoteEditor from '@/features/notes/components/NoteEditor'
 import Toast from '@/components/common/Toast'
-import { useNotesList, useCreateNote, useToggleNotePin, useToggleNoteArchive, useDeleteNote } from '@/hooks/useNotes'
+import {
+  useNotesList,
+  useCreateNote,
+  useUpdateNote,
+  useToggleNotePin,
+  useToggleNoteArchive,
+  useDeleteNote,
+} from '@/hooks/useNotes'
 import { stripHtml } from '@/features/notes/utils/notes.utils'
 
 const mapNote = (note) => ({
@@ -18,6 +25,7 @@ const mapNote = (note) => ({
 export default function PrivateNotes() {
   const { data, isLoading, isError, error } = useNotesList()
   const createNote = useCreateNote()
+  const updateNote = useUpdateNote()
   const toggleNotePin = useToggleNotePin()
   const toggleNoteArchive = useToggleNoteArchive()
   const deleteNote = useDeleteNote()
@@ -55,7 +63,9 @@ export default function PrivateNotes() {
 
     if (query) {
       list = list.filter(
-        (note) => note.title.toLowerCase().includes(query) || stripHtml(note.contentHtml).toLowerCase().includes(query),
+        (note) =>
+          note.title.toLowerCase().includes(query) ||
+          stripHtml(note.contentHtml).toLowerCase().includes(query),
       )
     }
 
@@ -85,14 +95,38 @@ export default function PrivateNotes() {
     if (!note) return
 
     if (!note.isNew) {
-      setNotes((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, title, contentHtml, updatedAt: new Date().toISOString() } : item)),
-      )
+      try {
+        const response = await updateNote.mutateAsync({
+          noteId: id,
+          payload: { title, contentHtml },
+        })
+        const updated = response.data.note
+        setNotes((prev) =>
+          prev.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  title: updated.title,
+                  contentHtml: updated.contentHtml,
+                  updatedAt: updated.updatedAt,
+                }
+              : item,
+          ),
+        )
+      } catch (err) {
+        setToast({
+          message: err?.response?.data?.message ?? 'Unable to save note. Please try again.',
+          tone: 'error',
+        })
+        throw err
+      }
       return
     }
 
     if (creatingRef.current.has(id)) {
-      setNotes((prev) => prev.map((item) => (item.id === id ? { ...item, title, contentHtml } : item)))
+      setNotes((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, title, contentHtml } : item)),
+      )
       return
     }
 
@@ -154,7 +188,9 @@ export default function PrivateNotes() {
     if (!note) return
 
     if (note.isNew) {
-      setNotes((prev) => prev.map((item) => (item.id === id ? { ...item, pinned: !item.pinned } : item)))
+      setNotes((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, pinned: !item.pinned } : item)),
+      )
       return
     }
 
@@ -162,7 +198,9 @@ export default function PrivateNotes() {
       const response = await toggleNotePin.mutateAsync(id)
       const updated = response.data.note
       setNotes((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, pinned: updated.pinned, updatedAt: updated.updatedAt } : item)),
+        prev.map((item) =>
+          item.id === id ? { ...item, pinned: updated.pinned, updatedAt: updated.updatedAt } : item,
+        ),
       )
     } catch (err) {
       setToast({
@@ -177,7 +215,9 @@ export default function PrivateNotes() {
     if (!note) return
 
     if (note.isNew) {
-      setNotes((prev) => prev.map((item) => (item.id === id ? { ...item, archived: !item.archived } : item)))
+      setNotes((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, archived: !item.archived } : item)),
+      )
       return
     }
 
@@ -186,12 +226,15 @@ export default function PrivateNotes() {
       const updated = response.data.note
       setNotes((prev) =>
         prev.map((item) =>
-          item.id === id ? { ...item, archived: updated.archived, updatedAt: updated.updatedAt } : item,
+          item.id === id
+            ? { ...item, archived: updated.archived, updatedAt: updated.updatedAt }
+            : item,
         ),
       )
     } catch (err) {
       setToast({
-        message: err?.response?.data?.message ?? 'Unable to update archive status. Please try again.',
+        message:
+          err?.response?.data?.message ?? 'Unable to update archive status. Please try again.',
         tone: 'error',
       })
     }
@@ -240,7 +283,9 @@ export default function PrivateNotes() {
 
       {isLoading && (
         <div className="flex items-center justify-center gap-unit-sm rounded-xl bg-surface-container-lowest p-unit-xl text-center text-body-md text-on-surface-variant shadow-sm">
-          <span className="material-symbols-outlined animate-spin text-[24px]">progress_activity</span>
+          <span className="material-symbols-outlined animate-spin text-[24px]">
+            progress_activity
+          </span>
           Loading your notes…
         </div>
       )}
@@ -271,7 +316,9 @@ export default function PrivateNotes() {
         </div>
       )}
 
-      {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={() => setToast(null)} />}
+      {toast && (
+        <Toast message={toast.message} tone={toast.tone} onDismiss={() => setToast(null)} />
+      )}
     </>
   )
 }

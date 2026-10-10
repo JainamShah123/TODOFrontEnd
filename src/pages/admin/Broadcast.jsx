@@ -5,16 +5,21 @@ import NoticeTable from '@/features/broadcast/components/NoticeTable'
 import { useDeleteNotice, useNoticesList, useUpdateNoticeStatus } from '@/hooks/useNotices'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
 import Toast from '@/components/common/Toast'
-import Pagination from '@/components/common/Pagination'
+import {
+  CountSummary,
+  PageHeader,
+  PrimaryButton,
+  SearchField,
+  SegmentedFilter,
+  TableFooter,
+} from '@/components/common/DataTable'
 import { ROUTES } from '@/constants/routes'
 
 const STATUS_FILTER_OPTIONS = [
-  { key: 'all', label: 'All Statuses' },
-  { key: 'active', label: 'Active' },
-  { key: 'inactive', label: 'Deactivated' },
+  { value: 'all', label: 'All' },
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Deactivated' },
 ]
-
-const PAGE_SIZE_OPTIONS = [10, 20, 30, 50]
 
 export default function Broadcast() {
   const navigate = useNavigate()
@@ -31,7 +36,9 @@ export default function Broadcast() {
   const { data, isLoading, isError } = useNoticesList({ page, limit })
   const pagination = data?.pagination
   const notices = useMemo(() => data?.data ?? [], [data])
-  const togglingNoticeId = updateNoticeStatus.isPending ? updateNoticeStatus.variables?.noticeId : null
+  const togglingNoticeId = updateNoticeStatus.isPending
+    ? updateNoticeStatus.variables?.noticeId
+    : null
 
   // Search/status filtering isn't sent to the API yet, so this only narrows
   // the page currently loaded, not the full list — acceptable for now.
@@ -44,8 +51,8 @@ export default function Broadcast() {
     })
   }, [notices, search, statusFilter])
 
-  const handlePageSizeChange = (event) => {
-    setLimit(Number(event.target.value))
+  const handlePageSizeChange = (value) => {
+    setLimit(value)
     setPage(1)
   }
 
@@ -57,7 +64,8 @@ export default function Broadcast() {
       queryClient.invalidateQueries({ queryKey: ['notices'] })
     } catch (error) {
       setToast({
-        message: error?.response?.data?.message ?? 'Unable to update the notice status. Please try again.',
+        message:
+          error?.response?.data?.message ?? 'Unable to update the notice status. Please try again.',
         tone: 'error',
       })
     }
@@ -79,75 +87,55 @@ export default function Broadcast() {
 
   return (
     <>
-      <div className="flex flex-col justify-between gap-unit-md md:flex-row md:items-end">
-        <div>
-          <h2 className="mb-unit-xs font-[var(--font-headline)] text-headline-lg-mobile text-on-surface md:text-display-lg">
-            Broadcast / Notice
-          </h2>
-        </div>
-        <button
-          type="button"
-          onClick={() => navigate(ROUTES.ADMIN_BROADCAST_CREATE)}
-          className="flex items-center justify-center gap-2 rounded-lg bg-primary-container px-unit-md py-unit-sm text-label-bold font-bold tracking-[0.05em] text-on-primary uppercase transition-colors hover:bg-primary"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          Create Notice
-        </button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-unit-md">
-        <input
-          type="text"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search notices by title..."
-          className="h-10 min-w-[224px] flex-1 rounded-lg border border-border-light bg-surface-container-lowest px-4 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
-        />
-        <select
-          value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
-          className="h-10 rounded-lg border border-border-light bg-surface-container-lowest px-4 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
-        >
-          {STATUS_FILTER_OPTIONS.map((option) => (
-            <option key={option.key} value={option.key}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={limit}
-          onChange={handlePageSizeChange}
-          className="h-10 rounded-lg border border-border-light bg-surface-container-lowest px-4 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
-        >
-          {PAGE_SIZE_OPTIONS.map((size) => (
-            <option key={size} value={size}>
-              {size} per page
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <NoticeTable
-        notices={filteredNotices}
-        onToggleStatus={handleToggleStatus}
-        togglingNoticeId={togglingNoticeId}
-        onEdit={(notice) => navigate(`${ROUTES.ADMIN_BROADCAST}/${notice.id}/edit`, { state: { notice } })}
-        onDelete={(notice) => {
-          deleteNotice.reset()
-          setNoticeToDelete(notice)
-        }}
-        isLoading={isLoading}
-        isError={isError}
+      <PageHeader
+        title="Broadcast"
+        subtitle="Notices sent to your staff."
+        action={
+          <PrimaryButton icon="campaign" onClick={() => navigate(ROUTES.ADMIN_BROADCAST_CREATE)}>
+            New Notice
+          </PrimaryButton>
+        }
       />
 
-      <div className="flex flex-col items-center justify-between gap-unit-sm sm:flex-row">
-        <p className="text-label-md text-on-surface-variant">
-          Showing {filteredNotices.length} of {pagination?.total ?? 0} notices
-        </p>
-        {pagination && pagination.totalPages > 1 && (
-          <Pagination page={pagination.page} totalPages={pagination.totalPages} onPageChange={setPage} />
-        )}
-      </div>
+      <section className="overflow-hidden rounded-xl border border-border-light bg-surface-container-lowest shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+          <SearchField value={search} onChange={setSearch} placeholder="Search notices by title…" />
+          <SegmentedFilter
+            options={STATUS_FILTER_OPTIONS}
+            value={statusFilter}
+            onChange={setStatusFilter}
+          />
+          <CountSummary count={pagination?.total}>notices</CountSummary>
+        </div>
+
+        <NoticeTable
+          notices={filteredNotices}
+          onToggleStatus={handleToggleStatus}
+          togglingNoticeId={togglingNoticeId}
+          onEdit={(notice) =>
+            navigate(`${ROUTES.ADMIN_BROADCAST}/${notice.id}/edit`, { state: { notice } })
+          }
+          onDelete={(notice) => {
+            deleteNotice.reset()
+            setNoticeToDelete(notice)
+          }}
+          isLoading={isLoading}
+          isError={isError}
+          emptyMessage={
+            search.trim() || statusFilter !== 'all'
+              ? 'No notices match.'
+              : 'No notices yet. Send your first one.'
+          }
+        />
+
+        <TableFooter
+          pagination={pagination}
+          noun="notices"
+          onPageChange={setPage}
+          limit={limit}
+          onLimitChange={handlePageSizeChange}
+        />
+      </section>
 
       {noticeToDelete && (
         <ConfirmDialog
@@ -157,7 +145,8 @@ export default function Broadcast() {
           cancelLabel="No"
           error={
             deleteNotice.isError
-              ? (deleteNotice.error?.response?.data?.message ?? 'Unable to delete the notice. Please try again.')
+              ? (deleteNotice.error?.response?.data?.message ??
+                'Unable to delete the notice. Please try again.')
               : null
           }
           isConfirming={deleteNotice.isPending}
@@ -166,7 +155,9 @@ export default function Broadcast() {
         />
       )}
 
-      {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={() => setToast(null)} />}
+      {toast && (
+        <Toast message={toast.message} tone={toast.tone} onDismiss={() => setToast(null)} />
+      )}
     </>
   )
 }

@@ -69,7 +69,8 @@ export const avatarColorFor = (id = '') => {
 
 export const isAdminAssignee = (task) => task.assignee?.type === 'admin'
 
-export const isAssignedTo = (task, assigneeId) => Boolean(assigneeId) && task.assignee?.id === assigneeId
+export const isAssignedTo = (task, assigneeId) =>
+  Boolean(assigneeId) && task.assignee?.id === assigneeId
 
 export const isTaskCompleted = (task) => task.status === TASK_STATUS.COMPLETED
 
@@ -82,7 +83,10 @@ export const isTaskOverdue = (task, now = new Date()) =>
 // are judged live, so one turns Delayed the moment it passes its due time without waiting for a refetch.
 export const getDisplayStatus = (task, now = new Date()) => {
   if (isTaskCompleted(task)) {
-    if (task.displayStatus === DISPLAY_STATUS.COMPLETED || task.displayStatus === DISPLAY_STATUS.COMPLETED_LATE) {
+    if (
+      task.displayStatus === DISPLAY_STATUS.COMPLETED ||
+      task.displayStatus === DISPLAY_STATUS.COMPLETED_LATE
+    ) {
       return task.displayStatus
     }
     const late = task.completedAt && task.dueAt && new Date(task.completedAt) > new Date(task.dueAt)
@@ -106,7 +110,9 @@ export const formatDue = (task, now = new Date()) => {
     return `${days} ${days === 1 ? 'day' : 'days'} late`
   }
 
-  const dayDiff = Math.round((new Date(due).setHours(0, 0, 0, 0) - new Date(now).setHours(0, 0, 0, 0)) / MS_PER_DAY)
+  const dayDiff = Math.round(
+    (new Date(due).setHours(0, 0, 0, 0) - new Date(now).setHours(0, 0, 0, 0)) / MS_PER_DAY,
+  )
   if (dayDiff === 0) return `Today, ${time}`
   if (dayDiff === 1) return `Tomorrow, ${time}`
   if (dayDiff === -1) return `Yesterday, ${time}`
@@ -122,14 +128,22 @@ export const canEditTask = (task) => isAdminAssignee(task) || !isTaskCompleted(t
 export const canChangeStatus = (task) => isAdminAssignee(task)
 
 export const formatShortDate = (dateKey) => {
+  if (!dateKey) return '—'
   const [year, month, day] = dateKey.split('-').map(Number)
-  return new Date(year, month - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
 }
 
 export const formatTime = (time) => {
   if (!time) return null
   const [hours, minutes] = time.split(':').map(Number)
-  return new Date(2000, 0, 1, hours, minutes).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  return new Date(2000, 0, 1, hours, minutes).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
 }
 
 // Single-line "MMM d, yyyy, h:mm AM/PM" display for a full ISO timestamp
@@ -168,7 +182,8 @@ export const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice
 // A locally-replaced attachment (Edit Task, before any upload API exists) is a
 // blob: URL with no real filename, so it just falls back to a generic label.
 export const attachmentFileName = (attachmentUrl) =>
-  (attachmentUrl?.startsWith('blob:') ? 'Attachment' : attachmentUrl?.split('/').pop()) ?? 'Attachment'
+  (attachmentUrl?.startsWith('blob:') ? 'Attachment' : attachmentUrl?.split('/').pop()) ??
+  'Attachment'
 
 // Resolves an attachment field into an openable URL. Server-relative paths
 // (e.g. "/uploads/tasks/<uuid>.pdf") need the API's origin prefixed; a blob:
@@ -188,12 +203,15 @@ export const mapApiTask = (raw) => ({
   attachmentUrl: raw.attachmentUrl ?? null,
   broker: raw.broker ?? '',
   assignee: raw.assignee,
-  createdBy: raw.createdBy ? { type: raw.createdByType, id: raw.createdBy, name: raw.createdByName ?? null } : null,
+  createdBy: raw.createdBy
+    ? { type: raw.createdByType, id: raw.createdBy, name: raw.createdByName ?? null }
+    : null,
   priority: raw.priority,
   status: raw.status === TASK_STATUS.COMPLETED ? TASK_STATUS.COMPLETED : TASK_STATUS.TODO,
   displayStatus: raw.displayStatus ?? null,
   timeline: raw.timeline,
   customDates: raw.customDates ?? null,
+  recurrence: raw.recurrence ?? null,
   dueDate: raw.dueDate,
   dueAt: raw.dueAt ?? null,
   time: raw.time,

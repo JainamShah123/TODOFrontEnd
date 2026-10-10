@@ -49,7 +49,9 @@ export const useTaskStore = create((set) => ({
   setDelayReason: (taskId, delayReason) =>
     set((state) => ({
       tasks: state.tasks.map((task) =>
-        task.id === taskId ? { ...task, delayReason, delayReasonAt: new Date().toISOString() } : task,
+        task.id === taskId
+          ? { ...task, delayReason, delayReasonAt: new Date().toISOString() }
+          : task,
       ),
     })),
   deleteTask: (taskId) =>

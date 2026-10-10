@@ -1,7 +1,16 @@
 import { forwardRef, useId } from 'react'
 
 const SelectField = forwardRef(function SelectField(
-  { label, error, required, placeholder, options, containerClassName = '', className = '', ...props },
+  {
+    label,
+    error,
+    required,
+    placeholder,
+    options,
+    containerClassName = '',
+    className = '',
+    ...props
+  },
   ref,
 ) {
   const id = useId()

@@ -50,13 +50,17 @@ export default function TaskCard({ task, onEdit, onStatusChange }) {
         </span>
       )}
 
-      {task.description && <p className="text-label-md text-on-surface-variant">{task.description}</p>}
+      {task.description && (
+        <p className="text-label-md text-on-surface-variant">{task.description}</p>
+      )}
 
       <div className="flex items-center justify-between gap-2 border-t border-border-light pt-unit-sm">
         <span className="flex min-w-0 items-center gap-2 text-label-md font-bold text-on-surface-variant">
           <span
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[16px] font-bold text-on-primary"
-            style={{ backgroundColor: isOwn ? 'var(--color-primary)' : STAFF_AVATAR_COLOR[task.assignedTo] }}
+            style={{
+              backgroundColor: isOwn ? 'var(--color-primary)' : STAFF_AVATAR_COLOR[task.assignedTo],
+            }}
           >
             {isOwn ? 'Y' : initialsOf(assigneeName)}
           </span>

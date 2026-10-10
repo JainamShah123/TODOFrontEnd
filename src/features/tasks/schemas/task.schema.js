@@ -1,5 +1,8 @@
 import { z } from 'zod'
-import { validateCustomDates } from '@/features/tasks/schemas/customDatesRefinement'
+import {
+  createTimelineValidator,
+  timelineFields,
+} from '@/features/tasks/schemas/timelineRefinement'
 
 export const createTaskSchema = z
   .object({
@@ -8,9 +11,7 @@ export const createTaskSchema = z
     attachment: z.any().optional(),
     broker: z.string().optional(),
     assignedTo: z.string().min(1, 'Please select a staff member'),
-    timeline: z.string().min(1, 'Please select a timeline'),
-    time: z.string().min(1, 'Please select a time'),
-    customDates: z.array(z.object({ date: z.string() })).optional(),
+    ...timelineFields,
     priority: z.enum(['low', 'medium', 'high']),
   })
-  .superRefine(validateCustomDates)
+  .superRefine(createTimelineValidator())

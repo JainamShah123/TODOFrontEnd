@@ -7,19 +7,21 @@ const POPOVER_WIDTH = 288
 // and a checkbox per value (with how many tasks have it). `selected` is the list of ticked values, or
 // null for "no filter" (everything ticked). Applying with everything ticked clears the filter again.
 // `options` are { value, label, count, swatch? }; `sort` is { asc, desc, current, onChange } or omitted.
-// Without `onApply` the header only sorts (no value list).
+// Without `onApply` there is no value list. `choices` ({ options: [{ value, label }], current, onChange })
+// adds a pick-one list instead, such as the Due column's date ranges; value null is "any".
 export default function ColumnFilter({
   label,
   options = [],
   selected,
   onApply,
   sort,
+  choices,
   isLoading = false,
   align = 'left',
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const buttonRef = useRef(null)
-  const isFiltered = Boolean(onApply) && selected != null
+  const isFiltered = (Boolean(onApply) && selected != null) || Boolean(choices?.current)
   const isSorted = sort && (sort.current === sort.asc || sort.current === sort.desc)
 
   return (
@@ -41,7 +43,7 @@ export default function ColumnFilter({
           </span>
         )}
         <span className="material-symbols-outlined text-[16px] opacity-60 group-hover:opacity-100">
-          {isFiltered ? 'filter_alt' : onApply ? 'arrow_drop_down' : 'swap_vert'}
+          {isFiltered ? 'filter_alt' : onApply || choices ? 'arrow_drop_down' : 'swap_vert'}
         </span>
       </button>
       {isOpen && (
@@ -51,6 +53,7 @@ export default function ColumnFilter({
           options={options}
           selected={selected}
           sort={sort}
+          choices={choices}
           isLoading={isLoading}
           align={align}
           onClose={() => setIsOpen(false)}
@@ -71,6 +74,7 @@ function FilterPopover({
   options,
   selected,
   sort,
+  choices,
   isLoading,
   align,
   filterable,
@@ -175,7 +179,9 @@ function FilterPopover({
       className="fixed z-50 flex max-h-[min(480px,70vh)] flex-col rounded-lg border border-border-light bg-surface-container-lowest text-[14px] font-normal tracking-normal text-on-surface normal-case shadow-xl"
     >
       {sort && (
-        <div className={`flex flex-col p-1 ${filterable ? 'border-b border-border-light' : ''}`}>
+        <div
+          className={`flex flex-col p-1 ${filterable || choices ? 'border-b border-border-light' : ''}`}
+        >
           {[
             { value: sort.asc, icon: 'arrow_upward', text: 'Sort A → Z' },
             { value: sort.desc, icon: 'arrow_downward', text: 'Sort Z → A' },
@@ -194,6 +200,28 @@ function FilterPopover({
               <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
               {item.text}
               {sort.current === item.value && (
+                <span className="material-symbols-outlined ml-auto text-[18px]">check</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+      {choices && (
+        <div className="flex flex-col p-1">
+          {choices.options.map((item) => (
+            <button
+              key={item.value ?? 'any'}
+              type="button"
+              onClick={() => {
+                choices.onChange(item.value)
+                onClose()
+              }}
+              className={`flex items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-surface-subtle ${
+                (choices.current ?? null) === item.value ? 'font-bold text-primary' : ''
+              }`}
+            >
+              {item.label}
+              {(choices.current ?? null) === item.value && (
                 <span className="material-symbols-outlined ml-auto text-[18px]">check</span>
               )}
             </button>

@@ -21,7 +21,9 @@ export const useBroadcastStore = create((set) => ({
   toggleNoticeStatus: (id) =>
     set((state) => ({
       notices: state.notices.map((notice) =>
-        notice.id === id ? { ...notice, status: notice.status === 'active' ? 'inactive' : 'active' } : notice,
+        notice.id === id
+          ? { ...notice, status: notice.status === 'active' ? 'inactive' : 'active' }
+          : notice,
       ),
     })),
 }))

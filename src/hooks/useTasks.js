@@ -34,6 +34,19 @@ export const useUpdateTaskStatus = () => {
   })
 }
 
+export const useUpdateChecklistItem = () => {
+  const queryClient = useQueryClient()
+  const invalidateLists = useInvalidateTaskLists()
+  return useMutation({
+    mutationFn: ({ taskId, index, checked }) =>
+      tasksService.updateChecklistItem(taskId, index, checked),
+    onSuccess: (_, { taskId }) => {
+      invalidateLists()
+      queryClient.invalidateQueries({ queryKey: ['tasks', 'detail', taskId] })
+    },
+  })
+}
+
 export const useUpdateTask = () => {
   const queryClient = useQueryClient()
   const invalidateLists = useInvalidateTaskLists()
@@ -64,7 +77,9 @@ const TASKS_REFRESH_INTERVAL_MS = 60 * 1000
 const useTasksListQuery = () =>
   useQuery({
     queryKey: ['tasks', 'list', 'all'],
-    queryFn: () => tasksService.listAll(),
+    // Every status, not the API's default window (open + completed in the last 7 days), so the admin
+    // dashboard's numbers match the Task Board views its cells link to.
+    queryFn: () => tasksService.listAll({ statuses: 'todo,delayed,completed,completed_late' }),
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,

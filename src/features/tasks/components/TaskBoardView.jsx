@@ -17,6 +17,15 @@ const ALL_STATUSES = 'all'
 // Brokers are free text, so "no broker" needs a token that can't be a real name in a comma list.
 const NO_BROKER = '~'
 
+// The Due column's date filter: the API's `range` values (whole days in the server's time zone).
+const DUE_RANGES = [
+  { value: null, label: 'Any date' },
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday_to_tomorrow', label: 'Yesterday to tomorrow' },
+  { value: 'this_week', label: 'This week' },
+  { value: 'last_week', label: 'Last week' },
+]
+
 const splitList = (value) => (value ? value.split(',').filter(Boolean) : null)
 const joinList = (list) => (list == null ? null : list.join(','))
 
@@ -51,6 +60,7 @@ export default function TaskBoardView({
   const creators = splitList(get('by'))
   const brokers = splitList(get('broker'))
   const sort = get('sort')
+  const due = DUE_RANGES.find((item) => item.value && item.value === get('due'))?.value ?? null
   const search = get('q') ?? ''
   const page = Number(get('page')) || 1
   const debouncedSearch = useDebouncedValue(search.trim())
@@ -58,6 +68,7 @@ export default function TaskBoardView({
   const filters = {
     search: debouncedSearch || undefined,
     statuses: statuses.join(','),
+    range: due ?? undefined,
     assignees: joinList(assignees) ?? undefined,
     creators: joinList(creators) ?? undefined,
     brokers: brokers
@@ -140,7 +151,17 @@ export default function TaskBoardView({
           />
         )
       case 'due':
-        return <ColumnFilter label={label} sort={sortProps('due_asc', 'due_desc')} />
+        return (
+          <ColumnFilter
+            label={label}
+            sort={sortProps('due_asc', 'due_desc')}
+            choices={{
+              options: DUE_RANGES,
+              current: due,
+              onChange: (value) => set({ due: value }),
+            }}
+          />
+        )
       case 'by':
         return (
           <ColumnFilter
@@ -168,7 +189,7 @@ export default function TaskBoardView({
     }
   }
 
-  const hasCustomView = ['status', 'tab', 'to', 'staff', 'by', 'broker', 'sort', 'q'].some(
+  const hasCustomView = ['status', 'tab', 'to', 'staff', 'by', 'broker', 'due', 'sort', 'q'].some(
     (key) => get(key) != null,
   )
   const statusSummary =
@@ -195,62 +216,75 @@ export default function TaskBoardView({
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-unit-md">
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => set({ q: event.target.value })}
-          placeholder="Search task or broker…"
-          className="h-10 min-w-[200px] flex-1 rounded-lg border border-border-light bg-surface-container-lowest px-4 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 focus:outline-none"
-        />
-        <p className="text-[14px] text-on-surface-variant">
-          <span className="font-bold text-on-surface tabular-nums">{pagination?.total ?? '–'}</span>{' '}
-          tasks · {statusSummary}
-          {(assignees || creators || brokers) && ' · filtered'}
-        </p>
-        {hasCustomView && (
-          <button
-            type="button"
-            onClick={() =>
-              set({
-                status: null,
-                tab: null,
-                to: null,
-                staff: null,
-                by: null,
-                broker: null,
-                sort: null,
-                q: null,
-              })
-            }
-            className="flex items-center gap-1 rounded-lg px-3 py-2 text-[14px] font-bold text-primary hover:bg-surface-subtle"
-          >
-            <span className="material-symbols-outlined text-[18px]">filter_alt_off</span>
-            Reset view
-          </button>
-        )}
-      </div>
+      <section className="overflow-hidden rounded-xl border border-border-light bg-surface-container-lowest shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+          <label className="relative min-w-[220px] flex-1 md:max-w-sm">
+            <span className="material-symbols-outlined pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[20px] text-on-surface-variant">
+              search
+            </span>
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => set({ q: event.target.value })}
+              placeholder="Search task or broker…"
+              className="h-10 w-full rounded-lg border border-border-light bg-surface-subtle/50 pr-3 pl-10 text-body-md text-on-surface transition-shadow focus:border-primary-container focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container/20 focus:outline-none"
+            />
+          </label>
+          <p className="flex flex-wrap items-center gap-2 text-[13px] text-on-surface-variant">
+            <span className="rounded-full bg-surface-container px-2.5 py-0.5 font-bold text-on-surface tabular-nums">
+              {pagination?.total ?? '–'}
+            </span>
+            <span>
+              tasks · {statusSummary}
+              {due && ` · due ${DUE_RANGES.find((item) => item.value === due).label.toLowerCase()}`}
+              {(assignees || creators || brokers) && ' · filtered'}
+            </span>
+          </p>
+          {hasCustomView && (
+            <button
+              type="button"
+              onClick={() =>
+                set({
+                  status: null,
+                  tab: null,
+                  to: null,
+                  staff: null,
+                  by: null,
+                  broker: null,
+                  due: null,
+                  sort: null,
+                  q: null,
+                })
+              }
+              className="ml-auto flex items-center gap-1 rounded-lg px-3 py-2 text-[13px] font-bold text-primary hover:bg-surface-subtle"
+            >
+              <span className="material-symbols-outlined text-[18px]">filter_alt_off</span>
+              Reset view
+            </button>
+          )}
+        </div>
 
-      <div
-        className={
-          isFetching && !isLoading ? 'opacity-70 transition-opacity' : 'transition-opacity'
-        }
-      >
-        <TaskTable
-          tasks={tasks}
-          detailBase={detailBase}
-          currentUserId={user?.id}
-          onEdit={canEdit ? setEditingTask : undefined}
-          renderHeader={renderHeader}
-          isLoading={isLoading}
-          isError={isError}
-          emptyMessage={
-            hasCustomView ? 'No tasks match these filters.' : 'Nothing to do. No open tasks.'
+        <div
+          className={
+            isFetching && !isLoading ? 'opacity-60 transition-opacity' : 'transition-opacity'
           }
-        />
-      </div>
+        >
+          <TaskTable
+            tasks={tasks}
+            detailBase={detailBase}
+            currentUserId={user?.id}
+            onEdit={canEdit ? setEditingTask : undefined}
+            renderHeader={renderHeader}
+            isLoading={isLoading}
+            isError={isError}
+            emptyMessage={
+              hasCustomView ? 'No tasks match these filters.' : 'Nothing to do. No open tasks.'
+            }
+          />
+        </div>
 
-      <TaskPager pagination={pagination} onPageChange={(value) => set({ page: value })} />
+        <TaskPager pagination={pagination} onPageChange={(value) => set({ page: value })} />
+      </section>
 
       {editingTask && <EditTaskModal task={editingTask} onClose={() => setEditingTask(null)} />}
     </>

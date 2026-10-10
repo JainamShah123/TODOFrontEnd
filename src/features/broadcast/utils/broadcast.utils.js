@@ -13,5 +13,9 @@ export function avatarColorFor(id) {
 }
 
 export function formatNoticeDate(isoString) {
-  return new Date(isoString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return new Date(isoString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
 }

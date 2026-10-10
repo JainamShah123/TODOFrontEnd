@@ -1,20 +1,30 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { editTaskSchema } from '@/features/tasks/schemas/edit-task.schema'
-import { TIMELINE_OPTIONS, PRIORITY_OPTIONS } from '@/features/tasks/data/task-options.data'
+import { PRIORITY_OPTIONS } from '@/features/tasks/data/task-options.data'
 import { useUpdateTask } from '@/hooks/useTasks'
 import { useTaskStore } from '@/features/tasks/store/taskStore'
 import { attachmentFileName, isAdminAssignee, mapApiTask } from '@/features/tasks/utils/task.utils'
 import SelectField from '@/features/tasks/components/SelectField'
-import CustomDatesField from '@/features/tasks/components/CustomDatesField'
+import TimelineFields from '@/features/tasks/components/TimelineFields'
+import RichTextEditor from '@/features/tasks/components/RichTextEditor'
+import {
+  defaultRepeatRule,
+  fromApiRepeatRule,
+  legacyTimelineToRule,
+} from '@/features/tasks/utils/repeatRule'
+import { timelinePayload } from '@/features/tasks/utils/timelinePayload'
 
 export default function EditTaskModal({ task, onClose }) {
   const updateTask = useUpdateTask()
   const updateTaskLocal = useTaskStore((state) => state.updateTask)
+  // Older fixed schedules (Daily, Every Saturday...) open as the matching repeat.
+  const legacyRule = legacyTimelineToRule(task.timeline, task.dueDate)
   const [apiError, setApiError] = useState(null)
   const {
     register,
+    control,
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
@@ -24,14 +34,14 @@ export default function EditTaskModal({ task, onClose }) {
       title: task.title,
       description: task.description ?? '',
       broker: task.broker ?? '',
-      timeline: task.timeline,
+      timeline: legacyRule ? 'repeat' : task.timeline,
       time: task.time ?? '',
       customDates: task.customDates ?? [],
+      recurrence:
+        legacyRule ?? (task.recurrence ? fromApiRepeatRule(task.recurrence) : defaultRepeatRule()),
       priority: task.priority,
     },
   })
-
-  const timeline = watch('timeline')
 
   // Assignee is read-only for now — the field stays in the modal so the user
   // can see who the task is assigned to, but changing it isn't wired up yet.
@@ -53,9 +63,7 @@ export default function EditTaskModal({ task, onClose }) {
           // task's current assignee unchanged (still required by the API).
           assigneeType: task.assignee?.type,
           assigneeId: task.assignee?.id,
-          timeline: values.timeline,
-          time: values.time,
-          customDates: values.timeline === 'custom' ? values.customDates.filter((entry) => entry.date) : undefined,
+          ...timelinePayload(values),
           priority: values.priority,
           // Omitted entirely when no new file is chosen, so the API keeps the
           // existing attachment (it has no separate "remove" mechanism).
@@ -79,10 +87,16 @@ export default function EditTaskModal({ task, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-margin-mobile">
-      <div className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-      <div className="relative flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-xl border border-border-light bg-surface-container-lowest shadow-xl">
+      <div
+        className="absolute inset-0 bg-on-surface/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border-light bg-surface-container-lowest shadow-xl">
         <div className="flex items-center justify-between border-b border-border-light p-unit-lg">
-          <h2 className="font-[var(--font-headline)] text-headline-sm text-on-surface">Edit Task</h2>
+          <h2 className="font-[var(--font-headline)] text-headline-sm text-on-surface">
+            Edit Task
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -99,7 +113,10 @@ export default function EditTaskModal({ task, onClose }) {
           className="space-y-unit-lg overflow-y-auto p-unit-lg"
         >
           <div className="space-y-2">
-            <label htmlFor="editTaskTitle" className="block text-label-bold font-bold text-on-surface">
+            <label
+              htmlFor="editTaskTitle"
+              className="block text-label-bold font-bold text-on-surface"
+            >
               Task Title <span className="text-error">*</span>
             </label>
             <input
@@ -112,25 +129,38 @@ export default function EditTaskModal({ task, onClose }) {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="editTaskDescription" className="block text-label-bold font-bold text-on-surface">
+            <label
+              htmlFor="editTaskDescription"
+              className="block text-label-bold font-bold text-on-surface"
+            >
               Description
             </label>
-            <textarea
-              id="editTaskDescription"
-              rows={3}
-              className="w-full resize-y rounded-lg border border-border-light bg-surface-subtle px-4 py-2 text-body-md text-on-surface transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
-              {...register('description')}
+            <Controller
+              control={control}
+              name="description"
+              render={({ field }) => (
+                <RichTextEditor
+                  id="editTaskDescription"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="editTaskAttachment" className="block text-label-bold font-bold text-on-surface">
+            <label
+              htmlFor="editTaskAttachment"
+              className="block text-label-bold font-bold text-on-surface"
+            >
               {task.attachmentUrl ? 'Replace attachment' : 'Add attachment'}
             </label>
             {task.attachmentUrl && (
               <div className="flex items-center gap-2 rounded-lg border border-border-light bg-surface-subtle px-4 py-2">
                 <span className="flex items-center gap-2 text-body-md text-on-surface">
-                  <span className="material-symbols-outlined text-[16px] text-on-surface-variant">description</span>
+                  <span className="material-symbols-outlined text-[16px] text-on-surface-variant">
+                    description
+                  </span>
                   Current: {attachmentFileName(task.attachmentUrl)}
                 </span>
               </div>
@@ -144,7 +174,10 @@ export default function EditTaskModal({ task, onClose }) {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="editTaskBroker" className="block text-label-bold font-bold text-on-surface">
+            <label
+              htmlFor="editTaskBroker"
+              className="block text-label-bold font-bold text-on-surface"
+            >
               Broker
             </label>
             <input
@@ -165,40 +198,19 @@ export default function EditTaskModal({ task, onClose }) {
             defaultValue={currentAssigneeOption.value}
           />
 
-          <SelectField
-            label="Timeline"
-            required
-            options={TIMELINE_OPTIONS}
-            error={errors.timeline?.message}
-            {...register('timeline')}
-          />
-
-          {timeline === 'custom' && <CustomDatesField register={register} errors={errors} />}
-
-          {timeline && (
-            <div className="space-y-2">
-              <label htmlFor="editTaskTime" className="block text-label-bold font-bold text-on-surface">
-                Time <span className="text-error">*</span>
-              </label>
-              <input
-                id="editTaskTime"
-                type="time"
-                className="w-full rounded-lg border border-border-light bg-surface-subtle px-4 py-2 text-body-md text-on-surface transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
-                {...register('time')}
-              />
-              <p className="text-label-md text-on-surface-variant">
-                Time for {TIMELINE_OPTIONS.find((option) => option.value === timeline)?.label}
-              </p>
-              {errors.time && <p className="text-sm text-error">{errors.time.message}</p>}
-            </div>
-          )}
+          <TimelineFields control={control} errors={errors} watch={watch} />
 
           <div className="space-y-4">
             <span className="block text-label-bold font-bold text-on-surface">Priority Level</span>
             <div className="flex gap-4">
               {PRIORITY_OPTIONS.map((option) => (
                 <label key={option.value} className="flex cursor-pointer items-center gap-2">
-                  <input type="radio" value={option.value} className={option.accentClass} {...register('priority')} />
+                  <input
+                    type="radio"
+                    value={option.value}
+                    className={option.accentClass}
+                    {...register('priority')}
+                  />
                   <span className="text-body-md text-on-surface">{option.label}</span>
                 </label>
               ))}

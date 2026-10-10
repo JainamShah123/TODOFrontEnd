@@ -13,9 +13,13 @@ export default function EditNotice() {
   if (!notice) {
     return (
       <div className="flex flex-col items-center gap-unit-md rounded-xl border border-border-light bg-surface-container-lowest p-unit-xl text-center shadow-sm">
-        <span className="material-symbols-outlined text-[40px] text-on-surface-variant">search_off</span>
+        <span className="material-symbols-outlined text-[40px] text-on-surface-variant">
+          search_off
+        </span>
         <div>
-          <h2 className="font-[var(--font-headline)] text-headline-sm text-on-surface">Notice details unavailable</h2>
+          <h2 className="font-[var(--font-headline)] text-headline-sm text-on-surface">
+            Notice details unavailable
+          </h2>
           <p className="text-body-md text-on-surface-variant">
             Open the edit option from the Broadcast / Notice list to edit a notice.
           </p>

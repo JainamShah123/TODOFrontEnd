@@ -9,11 +9,13 @@ export default function TaskPager({ pagination, onPageChange }) {
   const last = Math.min(page * limit, total)
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-unit-md">
+    <div className="flex flex-wrap items-center justify-between gap-unit-md border-t border-border-light px-4 py-3">
       <p className="text-label-md text-on-surface-variant">
         Showing {first}–{last} of {total} {total === 1 ? 'task' : 'tasks'}
       </p>
-      {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} />}
+      {totalPages > 1 && (
+        <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
+      )}
     </div>
   )
 }

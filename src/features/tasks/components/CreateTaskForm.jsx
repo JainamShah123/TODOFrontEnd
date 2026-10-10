@@ -1,13 +1,9 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router-dom'
 import { createTaskSchema } from '@/features/tasks/schemas/task.schema'
-import {
-  ADMIN_ASSIGNEE_OPTION,
-  TIMELINE_OPTIONS,
-  PRIORITY_OPTIONS,
-} from '@/features/tasks/data/task-options.data'
+import { ADMIN_ASSIGNEE_OPTION, PRIORITY_OPTIONS } from '@/features/tasks/data/task-options.data'
 import { useStaffOptions } from '@/hooks/useStaff'
 import { useCreateTask } from '@/hooks/useTasks'
 import { useTaskStore } from '@/features/tasks/store/taskStore'
@@ -17,7 +13,10 @@ import { Role } from '@/constants/roles'
 import { ROUTES } from '@/constants/routes'
 import Toast from '@/components/common/Toast'
 import SelectField from '@/features/tasks/components/SelectField'
-import CustomDatesField from '@/features/tasks/components/CustomDatesField'
+import TimelineFields from '@/features/tasks/components/TimelineFields'
+import RichTextEditor from '@/features/tasks/components/RichTextEditor'
+import { defaultRepeatRule } from '@/features/tasks/utils/repeatRule'
+import { timelinePayload } from '@/features/tasks/utils/timelinePayload'
 
 const ATTACHMENT_TYPES = '.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg'
 
@@ -33,6 +32,7 @@ export default function CreateTaskForm() {
   const [toast, setToast] = useState(null)
   const {
     register,
+    control,
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
@@ -44,14 +44,14 @@ export default function CreateTaskForm() {
       broker: '',
       // Staff start on themselves and can pick another staff member; admins pick explicitly.
       assignedTo: isStaff ? (user?.id ?? '') : '',
-      timeline: '',
+      timeline: 'custom',
       time: '',
       customDates: [],
+      recurrence: defaultRepeatRule(),
       priority: 'medium',
     },
   })
 
-  const timeline = watch('timeline')
   const {
     data: staffOptions = [],
     isLoading: staffLoading,
@@ -75,12 +75,7 @@ export default function CreateTaskForm() {
         broker: values.broker,
         assigneeType: assignToAdmin ? 'admin' : 'staff',
         assigneeId: assignToAdmin ? user?.id : values.assignedTo,
-        timeline: values.timeline,
-        time: values.time,
-        customDates:
-          values.timeline === 'custom'
-            ? values.customDates.filter((entry) => entry.date)
-            : undefined,
+        ...timelinePayload(values),
         priority: values.priority,
         attachment: values.attachment?.[0],
       })
@@ -98,62 +93,37 @@ export default function CreateTaskForm() {
       noValidate
       className="space-y-unit-lg p-unit-lg md:p-margin-desktop"
     >
-      <div className="grid grid-cols-1 gap-unit-lg">
-        <div className="space-y-2">
-          <label htmlFor="title" className="block text-label-bold font-bold text-on-surface">
-            Task Title <span className="text-error">*</span>
-          </label>
-          <input
-            id="title"
-            type="text"
-            placeholder="e.g., Q3 Financial Audit Prep"
-            className="w-full rounded-lg border border-border-light bg-surface-subtle px-4 py-2 text-body-md text-on-surface placeholder-outline transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
-            {...register('title')}
-          />
-          {errors.title && <p className="text-sm text-error">{errors.title.message}</p>}
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="description" className="block text-label-bold font-bold text-on-surface">
-            Description
-          </label>
-          <textarea
-            id="description"
-            rows={4}
-            placeholder="Provide detailed instructions and context for this task..."
-            className="w-full resize-y rounded-lg border border-border-light bg-surface-subtle px-4 py-4 text-body-md text-on-surface placeholder-outline transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
-            {...register('description')}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="attachment" className="block text-label-bold font-bold text-on-surface">
-            Add attachment
-          </label>
-          <input
-            id="attachment"
-            type="file"
-            accept={ATTACHMENT_TYPES}
-            className="block w-full cursor-pointer rounded-lg border border-border-light bg-surface-subtle text-body-md text-on-surface-variant file:mr-4 file:rounded-lg file:border-0 file:bg-secondary-container file:px-4 file:py-2 file:text-body-md file:font-semibold file:text-on-secondary-container hover:file:bg-secondary-fixed"
-            {...register('attachment')}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="broker" className="block text-label-bold font-bold text-on-surface">
-            Broker
-          </label>
-          <input
-            id="broker"
-            type="text"
-            placeholder="e.g., Broker or agency name"
-            className="w-full rounded-lg border border-border-light bg-surface-subtle px-4 py-2 text-body-md text-on-surface placeholder-outline transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
-            {...register('broker')}
-          />
-        </div>
+      <div className="space-y-2">
+        <label htmlFor="title" className="block text-label-bold font-bold text-on-surface">
+          Task Title <span className="text-error">*</span>
+        </label>
+        <input
+          id="title"
+          type="text"
+          placeholder="e.g., Q3 Financial Audit Prep"
+          className="w-full rounded-lg border border-border-light bg-surface-subtle px-4 py-2 text-body-md text-on-surface placeholder-outline transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
+          {...register('title')}
+        />
+        {errors.title && <p className="text-sm text-error">{errors.title.message}</p>}
       </div>
 
-      <div className="h-px w-full bg-border-light" />
+      <div className="space-y-2">
+        <label htmlFor="description" className="block text-label-bold font-bold text-on-surface">
+          Description
+        </label>
+        <Controller
+          control={control}
+          name="description"
+          render={({ field }) => (
+            <RichTextEditor
+              id="description"
+              value={field.value}
+              onChange={field.onChange}
+              placeholder="Add details, or a checklist of steps the assignee can tick off…"
+            />
+          )}
+        />
+      </div>
 
       <div className="grid grid-cols-1 gap-unit-lg md:grid-cols-2">
         <SelectField
@@ -172,43 +142,35 @@ export default function CreateTaskForm() {
           }
           {...register('assignedTo')}
         />
-        <SelectField
-          label="Timeline"
-          required
-          placeholder="Select Timeline"
-          options={TIMELINE_OPTIONS}
-          error={errors.timeline?.message}
-          {...register('timeline')}
-        />
+        <div className="space-y-2">
+          <label htmlFor="broker" className="block text-label-bold font-bold text-on-surface">
+            Broker
+          </label>
+          <input
+            id="broker"
+            type="text"
+            placeholder="e.g., Broker or agency name"
+            className="w-full rounded-lg border border-border-light bg-surface-subtle px-4 py-2 text-body-md text-on-surface placeholder-outline transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
+            {...register('broker')}
+          />
+        </div>
       </div>
 
-      {timeline && (
-        <div className="grid grid-cols-1 gap-unit-lg md:grid-cols-2">
-          {timeline === 'custom' && <CustomDatesField register={register} errors={errors} />}
-          <div className="space-y-2">
-            <label htmlFor="taskTime" className="block text-label-bold font-bold text-on-surface">
-              Time <span className="text-error">*</span>
-            </label>
-            <input
-              id="taskTime"
-              type="time"
-              className="w-full rounded-lg border border-border-light bg-surface-subtle px-4 py-2 text-body-md text-on-surface transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
-              {...register('time')}
-            />
-            <p className="text-label-md text-on-surface-variant">
-              Time for {TIMELINE_OPTIONS.find((option) => option.value === timeline)?.label}
-            </p>
-            {errors.time && <p className="text-sm text-error">{errors.time.message}</p>}
-          </div>
-        </div>
-      )}
+      <div className="h-px w-full bg-border-light" />
+
+      <TimelineFields control={control} errors={errors} watch={watch} />
+
+      <div className="h-px w-full bg-border-light" />
 
       <div className="grid grid-cols-1 gap-unit-lg md:grid-cols-2">
-        <div className="space-y-4">
+        <div className="space-y-2">
           <span className="block text-label-bold font-bold text-on-surface">Priority Level</span>
-          <div className="flex gap-4">
+          <div className="flex gap-2">
             {PRIORITY_OPTIONS.map((option) => (
-              <label key={option.value} className="flex cursor-pointer items-center gap-2">
+              <label
+                key={option.value}
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-border-light px-4 py-2 has-[:checked]:border-primary-container has-[:checked]:bg-primary-container/10"
+              >
                 <input
                   type="radio"
                   value={option.value}
@@ -219,6 +181,18 @@ export default function CreateTaskForm() {
               </label>
             ))}
           </div>
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="attachment" className="block text-label-bold font-bold text-on-surface">
+            Attachment
+          </label>
+          <input
+            id="attachment"
+            type="file"
+            accept={ATTACHMENT_TYPES}
+            className="block w-full cursor-pointer rounded-lg border border-border-light bg-surface-subtle text-body-md text-on-surface-variant file:mr-4 file:rounded-lg file:border-0 file:bg-secondary-container file:px-4 file:py-2 file:text-body-md file:font-semibold file:text-on-secondary-container hover:file:bg-secondary-fixed"
+            {...register('attachment')}
+          />
         </div>
       </div>
 

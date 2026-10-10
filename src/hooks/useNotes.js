@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { notesService } from '@/services/notes.service'
 
 export const useNotesList = () =>
@@ -18,22 +18,23 @@ export const useDashboardNotes = () =>
     refetchOnReconnect: false,
   })
 
-export const useCreateNote = () =>
-  useMutation({
-    mutationFn: notesService.create,
+// The notes page keeps its own local copy, so only the dashboard panel's query is refreshed; refetching
+// ['notes'] here would reset the page's list under the editor.
+const useNoteMutation = (mutationFn) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notes', 'dashboard'] }),
   })
+}
 
-export const useToggleNotePin = () =>
-  useMutation({
-    mutationFn: notesService.togglePin,
-  })
+export const useCreateNote = () => useNoteMutation(notesService.create)
 
-export const useToggleNoteArchive = () =>
-  useMutation({
-    mutationFn: notesService.toggleArchive,
-  })
+export const useUpdateNote = () =>
+  useNoteMutation(({ noteId, payload }) => notesService.update(noteId, payload))
 
-export const useDeleteNote = () =>
-  useMutation({
-    mutationFn: notesService.remove,
-  })
+export const useToggleNotePin = () => useNoteMutation(notesService.togglePin)
+
+export const useToggleNoteArchive = () => useNoteMutation(notesService.toggleArchive)
+
+export const useDeleteNote = () => useNoteMutation(notesService.remove)

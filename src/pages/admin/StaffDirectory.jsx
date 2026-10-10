@@ -6,17 +6,46 @@ import ConfirmDialog from '@/components/common/ConfirmDialog'
 import PasswordModal from '@/components/common/PasswordModal'
 import { resetPasswordSchema } from '@/features/auth/schemas/password.schema'
 import Toast from '@/components/common/Toast'
-import Pagination from '@/components/common/Pagination'
-import StatusChip from '@/features/staff/components/StatusChip'
-import { useStaffList, useDeleteStaff, useResetStaffPassword, useUpdateStaffStatus } from '@/hooks/useStaff'
+import {
+  CountSummary,
+  IconAction,
+  PageHeader,
+  PrimaryButton,
+  RowActions,
+  SearchField,
+  SegmentedFilter,
+  StatusBadge,
+  TableFooter,
+  TableStateRows,
+  cellClass,
+  headCellClass,
+  headRowClass,
+  rowClass,
+  tableClass,
+} from '@/components/common/DataTable'
+import { avatarColorFor, initialsOf } from '@/features/tasks/utils/task.utils'
+import {
+  useStaffList,
+  useDeleteStaff,
+  useResetStaffPassword,
+  useUpdateStaffStatus,
+} from '@/hooks/useStaff'
 
-const PAGE_SIZE_OPTIONS = [10, 20, 30, 50]
+const COLUMNS = [
+  { key: 'name', label: 'Name' },
+  { key: 'id', label: 'Employee ID', className: 'w-32' },
+  { key: 'email', label: 'Email', className: 'w-64' },
+  { key: 'phone', label: 'Phone', className: 'w-40' },
+  { key: 'status', label: 'Status', className: 'w-28' },
+  { key: 'actions', label: <span className="sr-only">Actions</span>, className: 'w-40' },
+]
 
 export default function StaffDirectory() {
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [staffToEdit, setStaffToEdit] = useState(null)
   const [staffToDelete, setStaffToDelete] = useState(null)
@@ -32,13 +61,18 @@ export default function StaffDirectory() {
 
   const filteredStaff = useMemo(() => {
     const query = search.trim().toLowerCase()
-    if (!query) return staff
-    return staff.filter((member) =>
-      [`${member.firstName} ${member.lastName}`, member.staffId, member.email, member.phone].some((field) =>
-        (field ?? '').toLowerCase().includes(query),
-      ),
+    return staff.filter(
+      (member) =>
+        (statusFilter === 'all' || member.status === statusFilter) &&
+        (!query ||
+          [
+            `${member.firstName} ${member.lastName}`,
+            member.staffId,
+            member.email,
+            member.phone,
+          ].some((field) => (field ?? '').toLowerCase().includes(query))),
     )
-  }, [staff, search])
+  }, [staff, search, statusFilter])
 
   const handleAddStaff = () => {
     queryClient.invalidateQueries({ queryKey: ['staff'] })
@@ -74,8 +108,8 @@ export default function StaffDirectory() {
     }
   }
 
-  const handlePageSizeChange = (event) => {
-    setLimit(Number(event.target.value))
+  const handlePageSizeChange = (value) => {
+    setLimit(value)
     setPage(1)
   }
 
@@ -83,185 +117,165 @@ export default function StaffDirectory() {
 
   return (
     <>
-      <div className="flex flex-col justify-between gap-unit-md md:flex-row md:items-end">
-        <div>
-          <h2 className="mb-unit-xs font-[var(--font-headline)] text-headline-lg-mobile text-on-surface md:text-display-lg">
-            Staff Directory
-          </h2>
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-lg bg-primary-container px-unit-md py-unit-sm text-label-bold font-bold tracking-[0.05em] text-on-primary uppercase transition-colors hover:bg-primary"
-        >
-          <span className="material-symbols-outlined text-lg">person_add</span>
-          Add Staff Member
-        </button>
-      </div>
+      <PageHeader
+        title="Staff Directory"
+        subtitle="Everyone on your team and their access."
+        action={
+          <PrimaryButton icon="person_add" onClick={() => setIsModalOpen(true)}>
+            Add Staff
+          </PrimaryButton>
+        }
+      />
 
-      <div className="flex flex-wrap items-center gap-unit-md">
-        <input
-          type="text"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search by name, ID, email, or phone..."
-          className="h-10 min-w-[224px] flex-1 rounded-lg border border-border-light bg-surface-container-lowest px-4 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
-        />
-        <select
-          value={limit}
-          onChange={handlePageSizeChange}
-          className="h-10 rounded-lg border border-border-light bg-surface-container-lowest px-4 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
-        >
-          {PAGE_SIZE_OPTIONS.map((size) => (
-            <option key={size} value={size}>
-              {size} per page
-            </option>
-          ))}
-        </select>
-        <div className="flex shrink-0 items-center gap-2 text-label-md text-on-surface-variant">
-          <span className="h-2 w-2 rounded-full bg-status-completed" />
-          <span className="font-medium text-on-surface">{pagination?.total ?? 0}</span> total
+      <section className="overflow-hidden rounded-xl border border-border-light bg-surface-container-lowest shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search name, ID, email, phone…"
+          />
+          <SegmentedFilter
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' },
+            ]}
+          />
+          <CountSummary count={pagination?.total}>staff members</CountSummary>
         </div>
-      </div>
 
-      <div className="overflow-hidden rounded-xl border border-border-light bg-surface-container-lowest shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] border-collapse text-left">
+          <table className={`${tableClass} min-w-[860px]`}>
             <thead>
-              <tr className="border-b border-border-light bg-surface-subtle text-label-bold font-bold tracking-[0.05em] text-on-surface-variant uppercase">
-                <th className="p-unit-md py-unit-sm font-medium">Employee ID</th>
-                <th className="p-unit-md py-unit-sm font-medium">Name</th>
-                <th className="p-unit-md py-unit-sm font-medium">Email</th>
-                <th className="p-unit-md py-unit-sm font-medium">Phone Number</th>
-                <th className="p-unit-md py-unit-sm font-medium">Status</th>
-                <th className="p-unit-md py-unit-sm text-right font-medium">Actions</th>
+              <tr className={headRowClass}>
+                {COLUMNS.map((column) => (
+                  <th key={column.key} className={`${headCellClass} ${column.className ?? ''}`}>
+                    {column.label}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border-light text-body-md text-on-surface">
-              {isLoading && (
-                <tr>
-                  <td colSpan={6} className="p-unit-lg text-center text-on-surface-variant">
-                    Loading staff directory…
-                  </td>
-                </tr>
-              )}
-
-              {isError && !isLoading && (
-                <tr>
-                  <td colSpan={6} className="p-unit-lg text-center text-error">
-                    {error?.response?.data?.message ?? 'Unable to load the staff directory. Please try again.'}
-                  </td>
-                </tr>
-              )}
-
-              {!isLoading && !isError && noStaffAtAll && (
-                <tr>
-                  <td colSpan={6} className="p-unit-xl text-center">
-                    <div className="flex flex-col items-center gap-unit-sm text-on-surface-variant">
-                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-container text-on-surface-variant">
-                        <span className="material-symbols-outlined text-[24px]">group_off</span>
-                      </span>
-                      <p className="text-body-md">
-                        No staff added yet. You can add one using the{' '}
-                        <span className="font-bold text-on-surface">Add Staff Member</span> button above.
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-
+            <tbody className="divide-y divide-border-light text-on-surface">
+              <TableStateRows
+                columns={COLUMNS.length}
+                isLoading={isLoading}
+                isError={isError && !isLoading}
+                errorMessage={
+                  error?.response?.data?.message ??
+                  'Unable to load the staff directory. Please try again.'
+                }
+                isEmpty={!isLoading && !isError && filteredStaff.length === 0}
+                emptyIcon={noStaffAtAll ? 'group_off' : 'search_off'}
+                emptyMessage={
+                  noStaffAtAll
+                    ? 'No staff yet. Add your first team member.'
+                    : 'No staff members match.'
+                }
+              />
               {!isLoading &&
                 !isError &&
-                !noStaffAtAll &&
-                filteredStaff.map((member) => (
-                  <tr
-                    key={member.staffId}
-                    className={`group transition-colors hover:bg-surface-subtle ${
-                      member.status === 'inactive' ? 'opacity-70' : ''
-                    }`}
-                  >
-                    <td className="p-unit-md text-on-surface-variant">#{member.staffId}</td>
-                    <td className="p-unit-md font-bold text-on-surface">
-                      {member.firstName} {member.lastName}
-                    </td>
-                    <td className="p-unit-md text-on-surface-variant">{member.email || '—'}</td>
-                    <td className="p-unit-md text-on-surface-variant">{member.phone || '—'}</td>
-                    <td className="p-unit-md">
-                      <StatusChip status={member.status} />
-                    </td>
-                    <td className="p-unit-md text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                        <button
-                          type="button"
-                          title="Edit"
-                          onClick={() => setStaffToEdit(member)}
-                          className="flex h-8 w-8 items-center justify-center rounded text-on-surface-variant transition-colors hover:bg-surface-container hover:text-primary"
-                        >
-                          <span className="material-symbols-outlined text-[24px]">edit</span>
-                        </button>
-                        <button
-                          type="button"
-                          title="Reset Password"
-                          onClick={() => setStaffToReset(member)}
-                          className="flex h-8 w-8 items-center justify-center rounded text-on-surface-variant transition-colors hover:bg-surface-container hover:text-primary"
-                        >
-                          <span className="material-symbols-outlined text-[24px]">lock_reset</span>
-                        </button>
-                        <button
-                          type="button"
-                          title={member.status === 'active' ? 'Deactivate' : 'Reactivate'}
-                          onClick={() => toggleStatus(member)}
-                          disabled={updateStaffStatus.isPending}
-                          className={`flex h-8 w-8 items-center justify-center rounded text-on-surface-variant transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                            member.status === 'active'
-                              ? 'hover:bg-error-container hover:text-error'
-                              : 'hover:bg-status-completed/20 hover:text-status-completed'
-                          }`}
-                        >
-                          <span className="material-symbols-outlined text-[24px]">
-                            {member.status === 'active' ? 'person_off' : 'person_add'}
+                filteredStaff.map((member) => {
+                  const name = `${member.firstName} ${member.lastName}`
+                  const isActive = member.status === 'active'
+                  return (
+                    <tr
+                      key={member.staffId}
+                      onClick={() => setStaffToEdit(member)}
+                      className={`${rowClass} cursor-pointer`}
+                    >
+                      <td className={cellClass}>
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-on-primary ${
+                              isActive ? '' : 'opacity-50 grayscale'
+                            }`}
+                            style={{ backgroundColor: avatarColorFor(String(member.staffId)) }}
+                          >
+                            {initialsOf(name) || '?'}
                           </span>
-                        </button>
-                        <button
-                          type="button"
-                          title="Delete"
-                          onClick={() => {
-                            deleteStaff.reset()
-                            setStaffToDelete(member)
-                          }}
-                          className="flex h-8 w-8 items-center justify-center rounded text-on-surface-variant transition-colors hover:bg-error-container hover:text-error"
-                        >
-                          <span className="material-symbols-outlined text-[24px]">delete</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-              {!isLoading && !isError && !noStaffAtAll && filteredStaff.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="p-unit-lg text-center text-on-surface-variant">
-                    No staff members match your search.
-                  </td>
-                </tr>
-              )}
+                          <span
+                            title={name}
+                            className={`truncate font-semibold group-hover:text-primary ${
+                              isActive ? '' : 'text-on-surface-variant'
+                            }`}
+                          >
+                            {name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className={`${cellClass} font-mono text-[13px] text-on-surface-variant`}>
+                        #{member.staffId}
+                      </td>
+                      <td
+                        className={`${cellClass} truncate text-on-surface-variant`}
+                        title={member.email}
+                      >
+                        {member.email || '—'}
+                      </td>
+                      <td className={`${cellClass} text-on-surface-variant tabular-nums`}>
+                        {member.phone || '—'}
+                      </td>
+                      <td className={cellClass}>
+                        <StatusBadge active={isActive} />
+                      </td>
+                      <td className={cellClass}>
+                        <RowActions>
+                          <IconAction
+                            icon="edit"
+                            label="Edit"
+                            onClick={() => setStaffToEdit(member)}
+                          />
+                          <IconAction
+                            icon="lock_reset"
+                            label="Reset password"
+                            onClick={() => setStaffToReset(member)}
+                          />
+                          <IconAction
+                            icon={isActive ? 'person_off' : 'person_check'}
+                            label={isActive ? 'Deactivate' : 'Reactivate'}
+                            tone={isActive ? 'danger' : 'success'}
+                            disabled={updateStaffStatus.isPending}
+                            onClick={() => toggleStatus(member)}
+                          />
+                          <IconAction
+                            icon="delete"
+                            label="Delete"
+                            tone="danger"
+                            onClick={() => {
+                              deleteStaff.reset()
+                              setStaffToDelete(member)
+                            }}
+                          />
+                        </RowActions>
+                      </td>
+                    </tr>
+                  )
+                })}
             </tbody>
           </table>
         </div>
-        <div className="flex flex-col items-center justify-between gap-unit-sm border-t border-border-light bg-surface-subtle px-unit-md py-unit-sm text-label-md text-on-surface-variant sm:flex-row">
-          <span>
-            Showing {filteredStaff.length} of {staff.length} on this page
-          </span>
-          {pagination && pagination.totalPages > 1 && (
-            <Pagination page={pagination.page} totalPages={pagination.totalPages} onPageChange={setPage} />
-          )}
-        </div>
-      </div>
 
-      {isModalOpen && <AddStaffModal onClose={() => setIsModalOpen(false)} onAdd={handleAddStaff} />}
+        <TableFooter
+          pagination={pagination}
+          noun="staff"
+          onPageChange={setPage}
+          limit={limit}
+          onLimitChange={handlePageSizeChange}
+        />
+      </section>
+
+      {isModalOpen && (
+        <AddStaffModal onClose={() => setIsModalOpen(false)} onAdd={handleAddStaff} />
+      )}
 
       {staffToEdit && (
-        <EditStaffModal staff={staffToEdit} onClose={() => setStaffToEdit(null)} onSave={handleEditStaff} />
+        <EditStaffModal
+          staff={staffToEdit}
+          onClose={() => setStaffToEdit(null)}
+          onSave={handleEditStaff}
+        />
       )}
 
       {staffToReset && (
@@ -269,12 +283,19 @@ export default function StaffDirectory() {
           title={`Reset password for ${staffToReset.firstName} ${staffToReset.lastName}`}
           fields={[
             { name: 'newPassword', label: 'New password', autoComplete: 'new-password' },
-            { name: 'confirmPassword', label: 'Confirm new password', autoComplete: 'new-password' },
+            {
+              name: 'confirmPassword',
+              label: 'Confirm new password',
+              autoComplete: 'new-password',
+            },
           ]}
           schema={resetPasswordSchema}
           submitLabel="Reset Password"
           onSubmit={async ({ newPassword }) => {
-            await resetStaffPassword.mutateAsync({ staffId: staffToReset.staffId, password: newPassword })
+            await resetStaffPassword.mutateAsync({
+              staffId: staffToReset.staffId,
+              password: newPassword,
+            })
             setToast({ message: 'Password reset.', tone: 'success' })
           }}
           onClose={() => setStaffToReset(null)}
@@ -289,7 +310,8 @@ export default function StaffDirectory() {
           cancelLabel="No"
           error={
             deleteStaff.isError
-              ? (deleteStaff.error?.response?.data?.message ?? 'Unable to delete staff member. Please try again.')
+              ? (deleteStaff.error?.response?.data?.message ??
+                'Unable to delete staff member. Please try again.')
               : null
           }
           isConfirming={deleteStaff.isPending}
@@ -298,7 +320,9 @@ export default function StaffDirectory() {
         />
       )}
 
-      {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={() => setToast(null)} />}
+      {toast && (
+        <Toast message={toast.message} tone={toast.tone} onDismiss={() => setToast(null)} />
+      )}
     </>
   )
 }

@@ -1,6 +1,21 @@
 import { useNavigate } from 'react-router-dom'
-import { avatarColorFor, formatNoticeDate, initialsOf } from '@/features/broadcast/utils/broadcast.utils'
+import {
+  avatarColorFor,
+  formatNoticeDate,
+  initialsOf,
+} from '@/features/broadcast/utils/broadcast.utils'
 import { ROUTES } from '@/constants/routes'
+import {
+  IconAction,
+  RowActions,
+  StatusBadge,
+  TableStateRows,
+  cellClass,
+  headCellClass,
+  headRowClass,
+  rowClass,
+  tableClass,
+} from '@/components/common/DataTable'
 
 export function RecipientStack({ recipients }) {
   const visible = recipients.slice(0, 3)
@@ -14,32 +29,36 @@ export function RecipientStack({ recipients }) {
           <div
             key={recipient.id}
             title={recipient.name}
-            style={{ backgroundColor: avatarColorFor(recipient.id), marginLeft: index === 0 ? 0 : '-8px' }}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-surface-container-lowest text-[16px] font-bold text-on-primary"
+            style={{
+              backgroundColor: avatarColorFor(recipient.id),
+              marginLeft: index === 0 ? 0 : '-8px',
+            }}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-surface-container-lowest text-[11px] font-bold text-on-primary"
           >
             {initialsOf(firstName, rest.join(' '))}
           </div>
         )
       })}
-      {overflow > 0 && <span className="ml-2 text-label-md text-on-surface-variant">+{overflow}</span>}
+      {overflow > 0 && (
+        <span className="ml-2 text-label-md text-on-surface-variant">+{overflow}</span>
+      )}
     </div>
   )
 }
 
 export function StatusPill({ status }) {
-  const isActive = status === 'active'
-  return (
-    <span
-      className={`inline-flex items-center gap-2 rounded-full px-2 py-2 text-label-md font-bold ${
-        isActive ? 'bg-status-completed/10 text-status-completed' : 'bg-surface-container text-on-surface-variant'
-      }`}
-    >
-      <span className="material-symbols-outlined text-[16px]">{isActive ? 'check_circle' : 'visibility_off'}</span>
-      {isActive ? 'Active' : 'Deactivated'}
-    </span>
-  )
+  return <StatusBadge active={status === 'active'} inactiveLabel="Deactivated" />
 }
 
+const COLUMNS = [
+  { key: 'notice', label: 'Notice' },
+  { key: 'to', label: 'Sent to', className: 'w-36' },
+  { key: 'date', label: 'Date', className: 'w-36' },
+  { key: 'status', label: 'Status', className: 'w-32' },
+  { key: 'actions', label: <span className="sr-only">Actions</span>, className: 'w-32' },
+]
+
+// Compact notice list in the task board's style. Clicking a row opens the notice; the actions don't.
 export default function NoticeTable({
   notices,
   onToggleStatus,
@@ -48,6 +67,7 @@ export default function NoticeTable({
   onDelete,
   isLoading = false,
   isError = false,
+  emptyMessage = 'No notices yet.',
 }) {
   const navigate = useNavigate()
 
@@ -56,115 +76,90 @@ export default function NoticeTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border-light bg-surface-container-lowest shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[680px] border-collapse text-left">
-          <thead>
-            <tr className="border-b border-border-light bg-surface-subtle text-label-bold font-bold tracking-[0.05em] text-on-surface-variant uppercase">
-              <th className="p-unit-md py-unit-sm font-medium">Notice</th>
-              <th className="p-unit-md py-unit-sm font-medium">Sent To</th>
-              <th className="p-unit-md py-unit-sm font-medium">Date</th>
-              <th className="p-unit-md py-unit-sm font-medium">Status</th>
-              <th className="p-unit-md py-unit-sm text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border-light text-body-md text-on-surface">
-            {isLoading && (
-              <tr>
-                <td colSpan={5} className="p-unit-lg text-center text-on-surface-variant">
-                  Loading notices…
-                </td>
-              </tr>
-            )}
-            {isError && !isLoading && (
-              <tr>
-                <td colSpan={5} className="p-unit-lg text-center text-error">
-                  Couldn't load notices. Please refresh the page.
-                </td>
-              </tr>
-            )}
-            {!isLoading &&
-              !isError &&
-              notices.map((notice) => (
+    <div className="overflow-x-auto">
+      <table className={`${tableClass} min-w-[760px]`}>
+        <thead>
+          <tr className={headRowClass}>
+            {COLUMNS.map((column) => (
+              <th key={column.key} className={`${headCellClass} ${column.className ?? ''}`}>
+                {column.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border-light text-on-surface">
+          <TableStateRows
+            columns={COLUMNS.length}
+            isLoading={isLoading}
+            isError={isError && !isLoading}
+            errorMessage="Couldn't load notices. Please refresh the page."
+            isEmpty={!isLoading && !isError && notices.length === 0}
+            emptyIcon="campaign"
+            emptyMessage={emptyMessage}
+          />
+          {!isLoading &&
+            !isError &&
+            notices.map((notice) => {
+              const isActive = notice.status === 'active'
+              return (
                 <tr
                   key={notice.id}
                   onClick={() => openDetail(notice)}
-                  className={`cursor-pointer transition-colors hover:bg-surface-subtle ${
-                    notice.status === 'inactive' ? 'opacity-70' : ''
-                  }`}
+                  className={`${rowClass} cursor-pointer`}
                 >
-                  <td className="p-unit-md">
-                    <p className="font-bold text-on-surface hover:text-primary hover:underline">{notice.title}</p>
+                  <td className={cellClass}>
+                    <p
+                      title={notice.title}
+                      className={`truncate font-semibold group-hover:text-primary ${
+                        isActive ? '' : 'text-on-surface-variant'
+                      }`}
+                    >
+                      {notice.title}
+                    </p>
                     {notice.message && (
-                      <p className="mt-0.5 max-w-xs truncate text-label-md text-on-surface-variant">{notice.message}</p>
+                      <p className="truncate text-[12px] text-on-surface-variant">
+                        {notice.message}
+                      </p>
                     )}
                   </td>
-                  <td className="p-unit-md">
+                  <td className={cellClass}>
                     <RecipientStack recipients={notice.recipients} />
                   </td>
-                  <td className="p-unit-md text-on-surface-variant">{formatNoticeDate(notice.createdAt)}</td>
-                  <td className="p-unit-md">
+                  <td
+                    className={`${cellClass} whitespace-nowrap text-on-surface-variant tabular-nums`}
+                  >
+                    {formatNoticeDate(notice.createdAt)}
+                  </td>
+                  <td className={cellClass}>
                     <StatusPill status={notice.status} />
                   </td>
-                  <td className="p-unit-md text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        title={notice.status === 'active' ? 'Deactivate notice' : 'Activate notice'}
-                        aria-label={notice.status === 'active' ? 'Deactivate notice' : 'Activate notice'}
+                  <td className={cellClass}>
+                    <RowActions>
+                      <IconAction
+                        icon={isActive ? 'visibility_off' : 'visibility'}
+                        label={isActive ? 'Deactivate notice' : 'Activate notice'}
+                        tone={isActive ? 'danger' : 'success'}
                         disabled={togglingNoticeId === notice.id}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onToggleStatus(notice)
-                        }}
-                        className={`flex h-8 w-8 items-center justify-center rounded text-on-surface-variant transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                          notice.status === 'active'
-                            ? 'hover:bg-error-container hover:text-error'
-                            : 'hover:bg-status-completed/20 hover:text-status-completed'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-[24px]">
-                          {notice.status === 'active' ? 'visibility_off' : 'visibility'}
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        title="Edit notice"
-                        aria-label="Edit notice"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onEdit?.(notice)
-                        }}
-                        className="flex h-8 w-8 items-center justify-center rounded text-on-surface-variant transition-colors hover:bg-surface-container hover:text-primary"
-                      >
-                        <span className="material-symbols-outlined text-[24px]">edit</span>
-                      </button>
-                      <button
-                        type="button"
-                        title="Delete notice"
-                        aria-label="Delete notice"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onDelete?.(notice)
-                        }}
-                        className="flex h-8 w-8 items-center justify-center rounded text-on-surface-variant transition-colors hover:bg-error-container hover:text-error"
-                      >
-                        <span className="material-symbols-outlined text-[24px]">delete</span>
-                      </button>
-                    </div>
+                        onClick={() => onToggleStatus(notice)}
+                      />
+                      <IconAction
+                        icon="edit"
+                        label="Edit notice"
+                        onClick={() => onEdit?.(notice)}
+                      />
+                      <IconAction
+                        icon="delete"
+                        label="Delete notice"
+                        tone="danger"
+                        onClick={() => onDelete?.(notice)}
+                      />
+                    </RowActions>
                   </td>
                 </tr>
-              ))}
-            {!isLoading && !isError && notices.length === 0 && (
-              <tr>
-                <td colSpan={5} className="p-unit-lg text-center text-on-surface-variant">
-                  No notices match your search.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              )
+            })}
+        </tbody>
+      </table>
     </div>
   )
 }
