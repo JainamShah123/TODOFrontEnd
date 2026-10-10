@@ -10,7 +10,7 @@ export default function Pagination({ page, totalPages, onPageChange }) {
         aria-label="Previous page"
         className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-light text-on-surface-variant transition-colors hover:bg-surface-subtle disabled:cursor-not-allowed disabled:opacity-40"
       >
-        <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+        <span className="material-symbols-outlined text-[16px]">chevron_left</span>
       </button>
       <span className="text-label-md font-bold whitespace-nowrap text-on-surface-variant">
         Page {page} of {safeTotalPages}
@@ -22,7 +22,7 @@ export default function Pagination({ page, totalPages, onPageChange }) {
         aria-label="Next page"
         className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-light text-on-surface-variant transition-colors hover:bg-surface-subtle disabled:cursor-not-allowed disabled:opacity-40"
       >
-        <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
       </button>
     </div>
   )

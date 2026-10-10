@@ -8,16 +8,16 @@ export default function NoteCard({ note, isActive, onSelect }) {
       type="button"
       onClick={() => onSelect(note.id)}
       className={`group relative w-full rounded-xl p-unit-md text-left shadow-sm transition-all hover:shadow-md ${
-        isActive ? 'bg-primary-container/5 pl-[18px] shadow-md' : 'bg-surface-container-lowest'
+        isActive ? 'bg-primary-container/5 pl-[16px] shadow-md' : 'bg-surface-container-lowest'
       }`}
     >
-      {isActive && <span className="absolute top-3 bottom-3 left-0 w-1.5 rounded-r-full bg-primary-container" />}
+      {isActive && <span className="absolute top-4 bottom-4 left-0 w-2 rounded-r-full bg-primary-container" />}
       <div className="flex items-start justify-between gap-unit-sm">
         <h3 className="line-clamp-1 font-[var(--font-headline)] text-headline-sm text-on-surface transition-colors group-hover:text-primary">
           {note.title || 'Untitled Note'}
         </h3>
         {note.pinned && (
-          <span className="material-symbols-outlined shrink-0 text-[18px] text-primary-container" data-weight="fill">
+          <span className="material-symbols-outlined shrink-0 text-[16px] text-primary-container" data-weight="fill">
             keep
           </span>
         )}

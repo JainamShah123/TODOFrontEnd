@@ -10,13 +10,13 @@ const TABS = [
 export default function NotesList({ notes, counts, activeTab, onTabChange, selectedNoteId, onSelectNote }) {
   return (
     <div className="flex flex-col gap-unit-md lg:col-span-4">
-      <div className="flex items-center gap-1 overflow-x-auto rounded-xl bg-surface-container-lowest p-1 shadow-sm">
+      <div className="flex items-center gap-2 overflow-x-auto rounded-xl bg-surface-container-lowest p-2 shadow-sm">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => onTabChange(tab.key)}
-            className={`flex-1 rounded-lg px-unit-sm py-1.5 text-center text-label-md font-bold whitespace-nowrap transition-all ${
+            className={`flex-1 rounded-lg px-unit-sm py-2 text-center text-label-md font-bold whitespace-nowrap transition-all ${
               activeTab === tab.key
                 ? 'bg-primary-container text-on-primary shadow-sm'
                 : 'text-on-surface-variant hover:bg-surface-subtle'
@@ -42,7 +42,7 @@ export default function NotesList({ notes, counts, activeTab, onTabChange, selec
       <div className="flex items-center justify-between rounded-xl bg-surface-container-lowest p-unit-md shadow-sm">
         <div className="flex items-center gap-unit-sm">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-container text-primary">
-            <span className="material-symbols-outlined text-[22px]">lock</span>
+            <span className="material-symbols-outlined text-[24px]">lock</span>
           </div>
           <div className="flex flex-col">
             <span className="text-label-bold font-bold text-on-surface">Private to you</span>

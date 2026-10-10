@@ -3,7 +3,7 @@ export default function StaffSummaryTable({ staff }) {
     <div className="flex flex-col overflow-hidden rounded-xl border border-border-light bg-surface-container-lowest shadow-sm lg:col-span-2">
       <div className="flex items-center justify-between border-b border-border-light bg-surface-subtle p-unit-md">
         <h3 className="font-[var(--font-headline)] text-headline-sm text-on-surface">Staff-wise Task Summary</h3>
-        <button className="flex items-center gap-1 text-label-bold font-bold tracking-[0.05em] text-primary hover:underline">
+        <button className="flex items-center gap-2 text-label-bold font-bold tracking-[0.05em] text-primary hover:underline">
           View All
           <span className="material-symbols-outlined text-sm">arrow_forward</span>
         </button>

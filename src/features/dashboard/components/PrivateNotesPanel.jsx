@@ -28,21 +28,21 @@ export default function PrivateNotesPanel() {
         <Link
           key={note.id}
           to={ROUTES.PRIVATE_NOTES}
-          className="flex gap-3 border-b border-border-light px-unit-lg py-unit-md transition-colors last:border-b-0 hover:bg-surface-subtle"
+          className="flex gap-4 border-b border-border-light px-unit-lg py-unit-md transition-colors last:border-b-0 hover:bg-surface-subtle"
         >
           <span
-            className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] ${
+            className={`flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[8px] ${
               note.pinned ? 'bg-status-pending/10 text-status-pending' : 'bg-status-completed/10 text-primary'
             }`}
           >
-            <span className="material-symbols-outlined text-[17px]">{note.pinned ? 'keep' : 'description'}</span>
+            <span className="material-symbols-outlined text-[16px]">{note.pinned ? 'keep' : 'description'}</span>
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-body-md font-bold text-on-surface">{note.title}</span>
             <span className="block truncate text-label-md text-on-surface-variant">
               {stripHtml(note.contentHtml) || 'No content yet.'}
             </span>
-            <span className="mt-1 block text-label-md text-on-surface-variant">
+            <span className="mt-2 block text-label-md text-on-surface-variant">
               {formatRelativeTimestamp(note.updatedAt)}
             </span>
           </span>

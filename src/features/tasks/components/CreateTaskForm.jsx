@@ -7,7 +7,6 @@ import {
   ADMIN_ASSIGNEE_ID,
   ADMIN_ASSIGNEE_OPTION,
   TIMELINE_OPTIONS,
-  STATUS_OPTIONS,
   PRIORITY_OPTIONS,
 } from '@/features/tasks/data/task-options.data'
 import { useStaffOptions } from '@/hooks/useStaff'
@@ -50,7 +49,6 @@ export default function CreateTaskForm() {
       time: '',
       customDates: [],
       priority: 'medium',
-      status: 'todo',
     },
   })
 
@@ -72,7 +70,6 @@ export default function CreateTaskForm() {
         time: values.time,
         customDates: values.timeline === 'custom' ? values.customDates.filter((entry) => entry.date) : undefined,
         priority: values.priority,
-        status: values.status,
         attachment: values.attachment?.[0],
       })
       if (response?.data?.task) addTask(mapApiTask(response.data.task))
@@ -108,7 +105,7 @@ export default function CreateTaskForm() {
             id="description"
             rows={4}
             placeholder="Provide detailed instructions and context for this task..."
-            className="w-full resize-y rounded-lg border border-border-light bg-surface-subtle px-4 py-3 text-body-md text-on-surface placeholder-outline transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
+            className="w-full resize-y rounded-lg border border-border-light bg-surface-subtle px-4 py-4 text-body-md text-on-surface placeholder-outline transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
             {...register('description')}
           />
         </div>
@@ -148,7 +145,7 @@ export default function CreateTaskForm() {
             <label className="block text-label-bold font-bold text-on-surface">
               Assigned To <span className="text-error">*</span>
             </label>
-            <p className="w-full rounded-lg border border-border-light bg-surface-subtle px-4 py-2.5 text-body-md text-on-surface-variant">
+            <p className="w-full rounded-lg border border-border-light bg-surface-subtle px-4 py-2 text-body-md text-on-surface-variant">
               {user?.name ?? 'You'} (You)
             </p>
           </div>
@@ -198,7 +195,7 @@ export default function CreateTaskForm() {
       )}
 
       <div className="grid grid-cols-1 gap-unit-lg md:grid-cols-2">
-        <div className="space-y-3">
+        <div className="space-y-4">
           <span className="block text-label-bold font-bold text-on-surface">Priority Level</span>
           <div className="flex gap-4">
             {PRIORITY_OPTIONS.map((option) => (
@@ -209,14 +206,6 @@ export default function CreateTaskForm() {
             ))}
           </div>
         </div>
-
-        <SelectField
-          label="Initial Status"
-          options={STATUS_OPTIONS}
-          containerClassName="md:w-1/2"
-          error={errors.status?.message}
-          {...register('status')}
-        />
       </div>
 
       {createTask.isError && (
@@ -229,16 +218,16 @@ export default function CreateTaskForm() {
         <button
           type="button"
           onClick={() => navigate(homeRoute)}
-          className="w-full rounded-lg border border-border-light bg-transparent px-6 py-2.5 text-label-bold font-bold text-on-surface-variant transition-colors hover:bg-surface-subtle hover:text-on-surface focus:outline-none focus:ring-2 focus:ring-border-light md:w-auto"
+          className="w-full rounded-lg border border-border-light bg-transparent px-6 py-2 text-label-bold font-bold text-on-surface-variant transition-colors hover:bg-surface-subtle hover:text-on-surface focus:outline-none focus:ring-2 focus:ring-border-light md:w-auto"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting || createTask.isPending || createTask.isSuccess}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-container px-6 py-2.5 text-label-bold font-bold text-on-primary shadow-sm transition-colors hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary-container focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-container px-6 py-2 text-label-bold font-bold text-on-primary shadow-sm transition-colors hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary-container focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 md:w-auto"
         >
-          <span className="material-symbols-outlined text-[18px]">check</span>
+          <span className="material-symbols-outlined text-[16px]">check</span>
           {isSubmitting || createTask.isPending ? 'Creating…' : 'Create Task'}
         </button>
       </div>

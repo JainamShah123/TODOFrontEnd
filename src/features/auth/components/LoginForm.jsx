@@ -60,10 +60,10 @@ export default function LoginForm() {
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-outline hover:text-on-surface-variant focus:outline-none"
+              className="absolute inset-y-0 right-0 flex items-center pr-4 text-outline hover:text-on-surface-variant focus:outline-none"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
-              <span className="material-symbols-outlined text-[20px]">
+              <span className="material-symbols-outlined text-[24px]">
                 {showPassword ? 'visibility' : 'visibility_off'}
               </span>
             </button>

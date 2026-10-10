@@ -27,17 +27,17 @@ export default function ConfirmDialog({
             </div>
             <div>
               <h2 className="font-[var(--font-headline)] text-headline-sm text-on-surface">{title}</h2>
-              <p className="mt-1 text-body-md text-on-surface-variant">{description}</p>
+              <p className="mt-2 text-body-md text-on-surface-variant">{description}</p>
               {error && <p className="mt-2 text-sm text-error">{error}</p>}
             </div>
           </div>
         </div>
-        <div className="flex justify-end gap-3 border-t border-border-light p-unit-lg pt-unit-md">
+        <div className="flex justify-end gap-4 border-t border-border-light p-unit-lg pt-unit-md">
           <button
             type="button"
             onClick={onCancel}
             disabled={isConfirming}
-            className="rounded-lg border border-border-light bg-transparent px-6 py-2.5 text-label-bold font-bold text-on-surface-variant transition-colors hover:bg-surface-subtle hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-70"
+            className="rounded-lg border border-border-light bg-transparent px-6 py-2 text-label-bold font-bold text-on-surface-variant transition-colors hover:bg-surface-subtle hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-70"
           >
             {cancelLabel}
           </button>
@@ -45,13 +45,13 @@ export default function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={isConfirming}
-            className={`flex items-center justify-center gap-2 rounded-lg px-6 py-2.5 text-label-bold font-bold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
+            className={`flex items-center justify-center gap-2 rounded-lg px-6 py-2 text-label-bold font-bold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
               isDanger
                 ? 'bg-error text-on-error hover:opacity-90'
                 : 'bg-primary-container text-on-primary hover:bg-primary'
             }`}
           >
-            <span className="material-symbols-outlined text-[18px]">{confirmIcon}</span>
+            <span className="material-symbols-outlined text-[16px]">{confirmIcon}</span>
             {isConfirming ? 'Please wait…' : confirmLabel}
           </button>
         </div>

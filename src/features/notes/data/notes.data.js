@@ -10,16 +10,16 @@ export const INITIAL_NOTES = [
     contentHtml: `
       <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold text-primary">Primary Onboarding Protocols</h3>
       <p>Verify that all <strong class="font-bold text-primary">API keys</strong> and admin credentials have been rotated prior to handoff. The provisioned accounts must adhere strictly to zero-trust access control policy.</p>
-      <div class="flex flex-col gap-2 my-1 bg-surface-container-low/50 p-unit-md rounded-lg">
-        <label class="flex items-center gap-3 cursor-pointer group">
+      <div class="flex flex-col gap-2 my-2 bg-surface-container-low/50 p-unit-md rounded-lg">
+        <label class="flex items-center gap-4 cursor-pointer group">
           <input type="checkbox" checked class="h-4 w-4 rounded accent-primary cursor-pointer" />
           <span class="line-through opacity-70 group-hover:opacity-100 transition-opacity">Generate scoped service credentials</span>
         </label>
-        <label class="flex items-center gap-3 cursor-pointer group">
+        <label class="flex items-center gap-4 cursor-pointer group">
           <input type="checkbox" checked class="h-4 w-4 rounded accent-primary cursor-pointer" />
           <span class="line-through opacity-70 group-hover:opacity-100 transition-opacity">Configure role-based access control (RBAC)</span>
         </label>
-        <label class="flex items-center gap-3 cursor-pointer group">
+        <label class="flex items-center gap-4 cursor-pointer group">
           <input type="checkbox" class="h-4 w-4 rounded accent-primary cursor-pointer" />
           <span class="font-medium">Deliver documentation in secure vault</span>
         </label>
@@ -38,7 +38,7 @@ expire_ts  = 1735689600 # Valid until Year End</pre>
     title: 'Q3 Financial Audit Preparation Steps',
     contentHtml: `
       <p>Review ledger reconciliations, cross-verify departmental cost centers, and verify cloud compute invoices before the close-out meeting.</p>
-      <ul class="list-disc pl-5">
+      <ul class="list-disc pl-6">
         <li>Reconcile Q3 vendor invoices against purchase orders</li>
         <li>Cross-check departmental budget variance reports</li>
         <li>Confirm cloud infrastructure spend against forecast</li>
@@ -53,7 +53,7 @@ expire_ts  = 1735689600 # Valid until Year End</pre>
     title: 'Team Meeting Summary & Action Items',
     contentHtml: `
       <p>Sprint retrospective concluded with 94% velocity. Action items prioritized for API throughput optimization and database indexing.</p>
-      <ol class="list-decimal pl-5">
+      <ol class="list-decimal pl-6">
         <li>Profile the /tasks endpoint under load</li>
         <li>Add composite index on (assignee, due_date)</li>
         <li>Schedule follow-up sync for next Thursday</li>

@@ -11,7 +11,7 @@ export default function TaskPager({ pagination, onPageChange }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-unit-md">
       <p className="text-label-md text-on-surface-variant">
-        Showing {first}–{last} of {total} {total === 1 ? 'task' : 'tasks'} in this date range
+        Showing {first}–{last} of {total} {total === 1 ? 'task' : 'tasks'}
       </p>
       {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} />}
     </div>

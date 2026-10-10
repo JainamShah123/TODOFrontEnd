@@ -32,7 +32,7 @@ export default function EditNotice() {
 
   return (
     <>
-      <div className="flex items-center gap-1.5 text-label-md text-on-surface-variant">
+      <div className="flex items-center gap-2 text-label-md text-on-surface-variant">
         <button
           type="button"
           onClick={() => navigate(ROUTES.ADMIN_BROADCAST)}
@@ -40,7 +40,7 @@ export default function EditNotice() {
         >
           Broadcast / Notice
         </button>
-        <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
         <span className="font-bold text-on-surface">Edit Notice</span>
       </div>
 
@@ -48,9 +48,6 @@ export default function EditNotice() {
         <h2 className="mb-unit-xs font-[var(--font-headline)] text-headline-lg-mobile text-on-surface md:text-headline-md">
           Edit Notice
         </h2>
-        <p className="text-body-lg text-on-surface-variant md:text-body-md">
-          Update the announcement and choose who should receive it.
-        </p>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border-light bg-surface-container-lowest shadow-[0_4px_24px_rgba(0,0,0,0.04)]">

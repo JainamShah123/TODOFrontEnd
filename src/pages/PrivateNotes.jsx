@@ -202,7 +202,7 @@ export default function PrivateNotes() {
       <div className="flex flex-col gap-unit-md rounded-xl bg-surface-container-lowest p-unit-lg shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-unit-xs">
           <div className="flex items-center gap-unit-sm">
-            <span className="h-2.5 w-2.5 rounded-full bg-primary-container" />
+            <span className="h-2 w-2 rounded-full bg-primary-container" />
             <span className="text-label-bold font-bold tracking-[0.05em] text-primary uppercase">
               Confidential Storage
             </span>
@@ -216,7 +216,7 @@ export default function PrivateNotes() {
         </div>
         <div className="flex flex-col items-stretch gap-unit-md sm:flex-row sm:items-center">
           <div className="relative min-w-[240px]">
-            <span className="material-symbols-outlined pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[20px] text-on-surface-variant">
+            <span className="material-symbols-outlined pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[24px] text-on-surface-variant">
               search
             </span>
             <input
@@ -230,9 +230,9 @@ export default function PrivateNotes() {
           <button
             type="button"
             onClick={handleCreateNote}
-            className="flex items-center justify-center gap-unit-sm rounded-lg bg-primary-container px-unit-lg py-2.5 text-label-bold font-bold text-on-primary shadow-md transition-all hover:opacity-95 active:scale-[0.99]"
+            className="flex items-center justify-center gap-unit-sm rounded-lg bg-primary-container px-unit-lg py-2 text-label-bold font-bold text-on-primary shadow-md transition-all hover:opacity-95 active:scale-[0.99]"
           >
-            <span className="material-symbols-outlined text-[20px]">add</span>
+            <span className="material-symbols-outlined text-[24px]">add</span>
             Create New Note
           </button>
         </div>
@@ -240,7 +240,7 @@ export default function PrivateNotes() {
 
       {isLoading && (
         <div className="flex items-center justify-center gap-unit-sm rounded-xl bg-surface-container-lowest p-unit-xl text-center text-body-md text-on-surface-variant shadow-sm">
-          <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+          <span className="material-symbols-outlined animate-spin text-[24px]">progress_activity</span>
           Loading your notes…
         </div>
       )}

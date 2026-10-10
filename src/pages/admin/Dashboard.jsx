@@ -49,14 +49,13 @@ export default function Dashboard() {
         <h2 className="mb-unit-xs font-[var(--font-headline)] text-headline-lg-mobile text-on-surface md:text-display-lg">
           Dashboard
         </h2>
-        <p className="text-body-lg text-on-surface-variant">Where your team stands today, plus your notes and notices.</p>
       </div>
 
       <div className="grid grid-cols-1 items-start gap-margin-desktop lg:grid-cols-5">
         <section className="overflow-hidden rounded-xl border border-border-light bg-surface-container-lowest shadow-sm lg:col-span-3">
           <div className="flex items-center justify-between gap-unit-sm border-b border-border-light px-unit-lg py-unit-md">
             <h3 className="flex items-center gap-2 font-[var(--font-headline)] text-headline-sm text-on-surface">
-              <span className="material-symbols-outlined text-[19px] text-primary">groups</span>
+              <span className="material-symbols-outlined text-[16px] text-primary">groups</span>
               Staff-wise Task Summary
             </h3>
             <span className="hidden text-label-md text-on-surface-variant sm:block">Most delayed first</span>
@@ -73,20 +72,20 @@ export default function Dashboard() {
               <thead>
                 <tr className="border-b border-border-light bg-surface-subtle text-label-bold font-bold tracking-[0.05em] text-on-surface-variant uppercase">
                   <th className="py-unit-sm pr-2 pl-unit-lg font-medium">Staff</th>
-                  <th className="w-14 px-1 py-unit-sm font-medium">Total</th>
-                  <th className="hidden w-14 px-1 py-unit-sm font-medium sm:table-cell">Done</th>
-                  <th className="hidden w-[4.5rem] px-1 py-unit-sm font-medium sm:table-cell">Pending</th>
-                  <th className="w-[4.5rem] px-1 py-unit-sm font-medium">Delayed</th>
-                  <th className="w-20 py-unit-sm pr-unit-lg pl-1 text-right font-medium whitespace-nowrap">Done %</th>
+                  <th className="w-14 px-2 py-unit-sm font-medium">Total</th>
+                  <th className="hidden w-14 px-2 py-unit-sm font-medium sm:table-cell">Done</th>
+                  <th className="hidden w-[72px] px-2 py-unit-sm font-medium sm:table-cell">Pending</th>
+                  <th className="w-[72px] px-2 py-unit-sm font-medium">Delayed</th>
+                  <th className="w-20 py-unit-sm pr-unit-lg pl-2 text-right font-medium whitespace-nowrap">Done %</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-light text-body-md text-on-surface tabular-nums">
                 {staffSummary.map((row) => (
                   <tr key={row.id} className="transition-colors hover:bg-surface-subtle">
                     <td className="py-unit-md pr-2 pl-unit-lg">
-                      <div className="flex min-w-0 items-center gap-2.5">
+                      <div className="flex min-w-0 items-center gap-2">
                         <span
-                          className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-on-primary sm:flex"
+                          className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-full text-[16px] font-bold text-on-primary sm:flex"
                           style={{ backgroundColor: avatarColorFor(row.id) }}
                         >
                           {initialsOf(row.name)}
@@ -100,18 +99,18 @@ export default function Dashboard() {
                         </Link>
                       </div>
                     </td>
-                    <td className="px-1">{row.total}</td>
-                    <td className={`hidden px-1 sm:table-cell ${row.done ? 'font-bold text-status-completed' : 'text-on-surface-variant/60'}`}>
+                    <td className="px-2">{row.total}</td>
+                    <td className={`hidden px-2 sm:table-cell ${row.done ? 'font-bold text-status-completed' : 'text-on-surface-variant/60'}`}>
                       {row.done}
                     </td>
-                    <td className={`hidden px-1 sm:table-cell ${row.pending ? 'font-bold text-status-pending' : 'text-on-surface-variant/60'}`}>
+                    <td className={`hidden px-2 sm:table-cell ${row.pending ? 'font-bold text-status-pending' : 'text-on-surface-variant/60'}`}>
                       {row.pending}
                     </td>
-                    <td className={`px-1 ${row.delayed ? 'font-bold text-status-delayed' : 'text-on-surface-variant/60'}`}>
+                    <td className={`px-2 ${row.delayed ? 'font-bold text-status-delayed' : 'text-on-surface-variant/60'}`}>
                       {row.delayed}
                     </td>
                     <td
-                      className={`pr-unit-lg pl-1 text-right font-bold ${
+                      className={`pr-unit-lg pl-2 text-right font-bold ${
                         row.percent >= 50 ? 'text-status-completed' : 'text-status-pending'
                       }`}
                     >
@@ -123,8 +122,8 @@ export default function Dashboard() {
             </table>
           )}
 
-          <div className="flex items-center gap-1.5 border-t border-border-light bg-surface-subtle px-unit-lg py-unit-sm text-label-md text-on-surface-variant">
-            <span className="material-symbols-outlined text-[14px]">touch_app</span>
+          <div className="flex items-center gap-2 border-t border-border-light bg-surface-subtle px-unit-lg py-unit-sm text-label-md text-on-surface-variant">
+            <span className="material-symbols-outlined text-[16px]">touch_app</span>
             Click a name to see only that person's tasks on the Task Board.
           </div>
         </section>
@@ -147,12 +146,12 @@ export default function Dashboard() {
               <Link
                 key={notice.id}
                 to={ROUTES.ADMIN_BROADCAST}
-                className={`flex gap-3 border-b border-border-light px-unit-lg py-unit-md transition-colors last:border-b-0 hover:bg-surface-subtle ${
+                className={`flex gap-4 border-b border-border-light px-unit-lg py-unit-md transition-colors last:border-b-0 hover:bg-surface-subtle ${
                   notice.status === 'inactive' ? 'opacity-60' : ''
                 }`}
               >
-                <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] bg-status-scheduled/10 text-status-scheduled">
-                  <span className="material-symbols-outlined text-[17px]">campaign</span>
+                <span className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[8px] bg-status-scheduled/10 text-status-scheduled">
+                  <span className="material-symbols-outlined text-[16px]">campaign</span>
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
@@ -162,7 +161,7 @@ export default function Dashboard() {
                   {notice.message && (
                     <span className="block truncate text-label-md text-on-surface-variant">{notice.message}</span>
                   )}
-                  <span className="mt-1.5 flex flex-wrap items-center gap-2 text-label-md text-on-surface-variant">
+                  <span className="mt-2 flex flex-wrap items-center gap-2 text-label-md text-on-surface-variant">
                     <RecipientStack recipients={notice.recipients} />
                     {notice.recipients.length} staff · {formatNoticeDate(notice.createdAt)}
                   </span>

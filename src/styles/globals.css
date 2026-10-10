@@ -60,52 +60,68 @@
   --color-status-scheduled: #3b82f6;
   --color-status-delayed: #ef4444;
 
-  --font-headline: 'Hanken Grotesk', system-ui, sans-serif;
-  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-headline: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
 
-  --text-display-lg: 36px;
-  --text-display-lg--line-height: 44px;
+  /* 8px grid: every font size and line height is a multiple of 8. */
+  --text-display-lg: 40px;
+  --text-display-lg--line-height: 48px;
   --text-display-lg--letter-spacing: -0.02em;
   --text-display-lg--font-weight: 700;
 
-  --text-headline-lg-mobile: 28px;
-  --text-headline-lg-mobile--line-height: 36px;
+  --text-headline-lg-mobile: 32px;
+  --text-headline-lg-mobile--line-height: 40px;
+  --text-headline-lg-mobile--letter-spacing: -0.02em;
   --text-headline-lg-mobile--font-weight: 700;
 
   --text-headline-md: 24px;
   --text-headline-md--line-height: 32px;
+  --text-headline-md--letter-spacing: -0.01em;
   --text-headline-md--font-weight: 600;
 
-  --text-headline-sm: 20px;
-  --text-headline-sm--line-height: 28px;
+  --text-headline-sm: 16px;
+  --text-headline-sm--line-height: 24px;
   --text-headline-sm--font-weight: 600;
 
   --text-body-lg: 16px;
   --text-body-lg--line-height: 24px;
 
-  --text-body-md: 14px;
-  --text-body-md--line-height: 20px;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
 
-  --text-label-bold: 12px;
-  --text-label-bold--line-height: 16px;
-  --text-label-bold--letter-spacing: 0.05em;
-  --text-label-bold--font-weight: 700;
+  --text-label-bold: 16px;
+  --text-label-bold--line-height: 24px;
+  --text-label-bold--font-weight: 600;
 
-  --text-label-md: 12px;
-  --text-label-md--line-height: 16px;
+  --text-label-md: 16px;
+  --text-label-md--line-height: 24px;
   --text-label-md--font-weight: 500;
+
+  /* Tailwind's built-in sizes, snapped to the same grid. */
+  --text-xs: 16px;
+  --text-xs--line-height: 24px;
+  --text-sm: 16px;
+  --text-sm--line-height: 24px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 16px;
+  --text-lg--line-height: 24px;
+  --text-xl: 24px;
+  --text-xl--line-height: 32px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
 
   --spacing-gutter: 24px;
   --spacing-margin-desktop: 32px;
   --spacing-margin-mobile: 16px;
-  --spacing-unit-xs: 4px;
+  --spacing-unit-xs: 8px;
   --spacing-unit-sm: 8px;
   --spacing-unit-md: 16px;
   --spacing-unit-lg: 24px;
   --spacing-unit-xl: 48px;
   --spacing-container-max: 1440px;
 
-  --radius-xl: 1.5rem;
+  --radius-xl: 16px;
 }
 
 body {

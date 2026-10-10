@@ -1,10 +1,26 @@
 import { ASSET_BASE_URL } from '@/config/api.config'
 
+// Users only ever set two states: a task is open (todo) or done (completed, via the Complete button).
 export const TASK_STATUS = {
   TODO: 'todo',
-  IN_PROGRESS: 'in_progress',
   COMPLETED: 'completed',
 }
+
+// Display-only states, worked out from the dates (same rules as the API's displayStatus). Nobody picks these.
+export const DISPLAY_STATUS = {
+  TODO: 'todo',
+  DELAYED: 'delayed',
+  COMPLETED: 'completed',
+  COMPLETED_LATE: 'completed_late',
+}
+
+// Tab / tile order everywhere the four states are listed.
+export const STATUS_TABS = [
+  DISPLAY_STATUS.TODO,
+  DISPLAY_STATUS.DELAYED,
+  DISPLAY_STATUS.COMPLETED,
+  DISPLAY_STATUS.COMPLETED_LATE,
+]
 
 export const STATUS_META = {
   todo: {
@@ -12,12 +28,6 @@ export const STATUS_META = {
     dotClass: 'bg-status-scheduled',
     textClass: 'text-status-scheduled',
     bgClass: 'bg-status-scheduled/10',
-  },
-  in_progress: {
-    label: 'In Progress',
-    dotClass: 'bg-status-pending',
-    textClass: 'text-status-pending',
-    bgClass: 'bg-status-pending/10',
   },
   delayed: {
     label: 'Delayed',
@@ -30,6 +40,12 @@ export const STATUS_META = {
     dotClass: 'bg-status-completed',
     textClass: 'text-status-completed',
     bgClass: 'bg-status-completed/10',
+  },
+  completed_late: {
+    label: 'Completed Late',
+    dotClass: 'bg-status-pending',
+    textClass: 'text-status-pending',
+    bgClass: 'bg-status-pending/10',
   },
 }
 
@@ -55,30 +71,50 @@ export const isAdminAssignee = (task) => task.assignee?.type === 'admin'
 
 export const isAssignedTo = (task, assigneeId) => Boolean(assigneeId) && task.assignee?.id === assigneeId
 
-// Combines dueDate ("YYYY-MM-DD") + time ("HH:mm") into a real Date so overdue
-// can be judged against the current moment, not just the calendar date. A task
-// with no due time falls back to end-of-day, so it only turns overdue once its
-// due date has fully elapsed (rather than at midnight of that same day).
-const dueDateTimeOf = (task) => {
-  const [year, month, day] = task.dueDate.split('-').map(Number)
-  if (task.time) {
-    const [hours, minutes] = task.time.split(':').map(Number)
-    return new Date(year, month - 1, day, hours, minutes)
-  }
-  return new Date(year, month - 1, day, 23, 59, 59, 999)
-}
+export const isTaskCompleted = (task) => task.status === TASK_STATUS.COMPLETED
 
+// Judged from the exact due timestamp the server sends (dueAt), the same way the server's status
+// filter judges it, so a task's badge always matches the tab it shows up under.
 export const isTaskOverdue = (task, now = new Date()) =>
-  task.status !== TASK_STATUS.COMPLETED && dueDateTimeOf(task) < now
+  !isTaskCompleted(task) && Boolean(task.dueAt) && new Date(task.dueAt) < now
 
+// Completed tasks keep the server's verdict (it can fall back to updated_at for old records); open tasks
+// are judged live, so one turns Delayed the moment it passes its due time without waiting for a refetch.
 export const getDisplayStatus = (task, now = new Date()) => {
-  if (task.status === TASK_STATUS.COMPLETED) return 'completed'
-  return isTaskOverdue(task, now) ? 'delayed' : task.status
+  if (isTaskCompleted(task)) {
+    if (task.displayStatus === DISPLAY_STATUS.COMPLETED || task.displayStatus === DISPLAY_STATUS.COMPLETED_LATE) {
+      return task.displayStatus
+    }
+    const late = task.completedAt && task.dueAt && new Date(task.completedAt) > new Date(task.dueAt)
+    return late ? DISPLAY_STATUS.COMPLETED_LATE : DISPLAY_STATUS.COMPLETED
+  }
+  return isTaskOverdue(task, now) ? DISPLAY_STATUS.DELAYED : DISPLAY_STATUS.TODO
 }
 
-// Admin can edit any of their own tasks; a staff task can only be edited while
-// it's still in To Do (locks once work has started, matching the board's rule).
-export const canEditTask = (task) => isAdminAssignee(task) || task.status === TASK_STATUS.TODO
+const MS_PER_DAY = 24 * 60 * 60 * 1000
+
+// Plain-language due text for a list row: "3 days late", "Today, 4:00 PM", "Tomorrow, 9:00 AM" or
+// "Oct 17, 4:00 PM". Lateness only shows while the task is still open.
+export const formatDue = (task, now = new Date()) => {
+  if (!task.dueAt) return '—'
+  const due = new Date(task.dueAt)
+  const time = due.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+
+  if (isTaskOverdue(task, now)) {
+    const days = Math.floor((now - due) / MS_PER_DAY)
+    if (days === 0) return `Late since ${time}`
+    return `${days} ${days === 1 ? 'day' : 'days'} late`
+  }
+
+  const dayDiff = Math.round((new Date(due).setHours(0, 0, 0, 0) - new Date(now).setHours(0, 0, 0, 0)) / MS_PER_DAY)
+  if (dayDiff === 0) return `Today, ${time}`
+  if (dayDiff === 1) return `Tomorrow, ${time}`
+  if (dayDiff === -1) return `Yesterday, ${time}`
+  return `${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${time}`
+}
+
+// Admin can edit any of their own tasks; a staff task can only be edited until it's completed.
+export const canEditTask = (task) => isAdminAssignee(task) || !isTaskCompleted(task)
 
 // Only the admin can change status on their own tasks from the admin side;
 // staff-side call sites gate this separately since a staff member's board is
@@ -153,10 +189,12 @@ export const mapApiTask = (raw) => ({
   broker: raw.broker ?? '',
   assignee: raw.assignee,
   priority: raw.priority,
-  status: raw.status,
+  status: raw.status === TASK_STATUS.COMPLETED ? TASK_STATUS.COMPLETED : TASK_STATUS.TODO,
+  displayStatus: raw.displayStatus ?? null,
   timeline: raw.timeline,
   customDates: raw.customDates ?? null,
   dueDate: raw.dueDate,
+  dueAt: raw.dueAt ?? null,
   time: raw.time,
   createdAt: raw.createdAt,
   completedAt: raw.completionAt ?? null,

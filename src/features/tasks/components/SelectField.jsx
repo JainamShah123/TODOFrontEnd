@@ -18,7 +18,7 @@ const SelectField = forwardRef(function SelectField(
           id={id}
           ref={ref}
           defaultValue={placeholder ? '' : undefined}
-          className={`w-full cursor-pointer appearance-none rounded-lg border border-border-light bg-surface-subtle py-2.5 pr-10 pl-4 text-body-md text-on-surface transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none ${className}`}
+          className={`w-full cursor-pointer appearance-none rounded-lg border border-border-light bg-surface-subtle py-2 pr-10 pl-4 text-body-md text-on-surface transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none ${className}`}
           {...props}
         >
           {placeholder && (
@@ -32,7 +32,7 @@ const SelectField = forwardRef(function SelectField(
             </option>
           ))}
         </select>
-        <span className="material-symbols-outlined pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-on-surface-variant">
+        <span className="material-symbols-outlined pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-on-surface-variant">
           expand_more
         </span>
       </div>

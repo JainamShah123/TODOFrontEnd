@@ -15,7 +15,7 @@ export function RecipientStack({ recipients }) {
             key={recipient.id}
             title={recipient.name}
             style={{ backgroundColor: avatarColorFor(recipient.id), marginLeft: index === 0 ? 0 : '-8px' }}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-surface-container-lowest text-[10px] font-bold text-on-primary"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-surface-container-lowest text-[16px] font-bold text-on-primary"
           >
             {initialsOf(firstName, rest.join(' '))}
           </div>
@@ -30,11 +30,11 @@ export function StatusPill({ status }) {
   const isActive = status === 'active'
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-label-md font-bold ${
+      className={`inline-flex items-center gap-2 rounded-full px-2 py-2 text-label-md font-bold ${
         isActive ? 'bg-status-completed/10 text-status-completed' : 'bg-surface-container text-on-surface-variant'
       }`}
     >
-      <span className="material-symbols-outlined text-[13px]">{isActive ? 'check_circle' : 'visibility_off'}</span>
+      <span className="material-symbols-outlined text-[16px]">{isActive ? 'check_circle' : 'visibility_off'}</span>
       {isActive ? 'Active' : 'Deactivated'}
     </span>
   )
@@ -107,7 +107,7 @@ export default function NoticeTable({
                     <StatusPill status={notice.status} />
                   </td>
                   <td className="p-unit-md text-right">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-2">
                       <button
                         type="button"
                         title={notice.status === 'active' ? 'Deactivate notice' : 'Activate notice'}
@@ -123,7 +123,7 @@ export default function NoticeTable({
                             : 'hover:bg-status-completed/20 hover:text-status-completed'
                         }`}
                       >
-                        <span className="material-symbols-outlined text-[20px]">
+                        <span className="material-symbols-outlined text-[24px]">
                           {notice.status === 'active' ? 'visibility_off' : 'visibility'}
                         </span>
                       </button>
@@ -137,7 +137,7 @@ export default function NoticeTable({
                         }}
                         className="flex h-8 w-8 items-center justify-center rounded text-on-surface-variant transition-colors hover:bg-surface-container hover:text-primary"
                       >
-                        <span className="material-symbols-outlined text-[20px]">edit</span>
+                        <span className="material-symbols-outlined text-[24px]">edit</span>
                       </button>
                       <button
                         type="button"
@@ -149,7 +149,7 @@ export default function NoticeTable({
                         }}
                         className="flex h-8 w-8 items-center justify-center rounded text-on-surface-variant transition-colors hover:bg-error-container hover:text-error"
                       >
-                        <span className="material-symbols-outlined text-[20px]">delete</span>
+                        <span className="material-symbols-outlined text-[24px]">delete</span>
                       </button>
                     </div>
                   </td>

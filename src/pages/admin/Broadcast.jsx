@@ -84,7 +84,6 @@ export default function Broadcast() {
           <h2 className="mb-unit-xs font-[var(--font-headline)] text-headline-lg-mobile text-on-surface md:text-display-lg">
             Broadcast / Notice
           </h2>
-          <p className="text-body-lg text-on-surface-variant">Announcements sent to your staff members.</p>
         </div>
         <button
           type="button"
@@ -102,12 +101,12 @@ export default function Broadcast() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search notices by title..."
-          className="h-9 min-w-[220px] flex-1 rounded-lg border border-border-light bg-surface-container-lowest px-4 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
+          className="h-10 min-w-[224px] flex-1 rounded-lg border border-border-light bg-surface-container-lowest px-4 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
         />
         <select
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
-          className="h-9 rounded-lg border border-border-light bg-surface-container-lowest px-3 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
+          className="h-10 rounded-lg border border-border-light bg-surface-container-lowest px-4 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
         >
           {STATUS_FILTER_OPTIONS.map((option) => (
             <option key={option.key} value={option.key}>
@@ -118,7 +117,7 @@ export default function Broadcast() {
         <select
           value={limit}
           onChange={handlePageSizeChange}
-          className="h-9 rounded-lg border border-border-light bg-surface-container-lowest px-3 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
+          className="h-10 rounded-lg border border-border-light bg-surface-container-lowest px-4 text-body-md text-on-surface shadow-sm transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
         >
           {PAGE_SIZE_OPTIONS.map((size) => (
             <option key={size} value={size}>

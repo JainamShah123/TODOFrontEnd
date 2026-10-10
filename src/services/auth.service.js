@@ -44,5 +44,7 @@ export const authService = {
       ? loginStaff({ identifier: trimmedIdentifier, password })
       : loginAdmin({ identifier: trimmedIdentifier, password })
   },
+  changePassword: ({ currentPassword, newPassword }) =>
+    apiClient.patch('/auth/password', { currentPassword, newPassword }).then((res) => res.data),
   logout: () => apiClient.post('/auth/logout').then((res) => res.data),
 }

@@ -32,13 +32,13 @@ export default function ProductivityChart({ percentage }) {
       <div className="mt-unit-lg space-y-unit-sm">
         <div className="flex items-center justify-between text-body-md">
           <span className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-status-completed" /> Completed
+            <span className="h-4 w-4 rounded-full bg-status-completed" /> Completed
           </span>
           <span className="font-medium">{percentage}%</span>
         </div>
         <div className="flex items-center justify-between text-body-md">
           <span className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-border-light" /> Remaining
+            <span className="h-4 w-4 rounded-full bg-border-light" /> Remaining
           </span>
           <span className="font-medium">{100 - percentage}%</span>
         </div>

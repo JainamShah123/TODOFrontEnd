@@ -7,6 +7,11 @@ export const useLogout = () =>
     mutationFn: authService.logout,
   })
 
+export const useChangePassword = () =>
+  useMutation({
+    mutationFn: authService.changePassword,
+  })
+
 export const useLogin = () => {
   const setSession = useAuthStore((state) => state.setSession)
 

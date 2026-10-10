@@ -86,16 +86,15 @@ export default function Schedule() {
           <h2 className="mb-unit-xs font-[var(--font-headline)] text-headline-lg-mobile text-on-surface md:text-display-lg">
             Schedule &amp; Meetings
           </h2>
-          <p className="text-body-lg text-on-surface-variant">Manage team calendar and deadlines.</p>
         </div>
         <div className="flex flex-wrap items-center gap-unit-sm">
-          <div className="flex items-center overflow-hidden rounded-lg border border-border-light bg-surface-container-lowest p-1 shadow-sm">
+          <div className="flex items-center overflow-hidden rounded-lg border border-border-light bg-surface-container-lowest p-2 shadow-sm">
             {VIEW_OPTIONS.map((option) => (
               <button
                 key={option}
                 type="button"
                 onClick={() => setView(option)}
-                className={`rounded px-4 py-1.5 text-label-bold font-bold capitalize transition-colors ${
+                className={`rounded px-4 py-2 text-label-bold font-bold capitalize transition-colors ${
                   view === option
                     ? 'bg-surface-container text-on-surface'
                     : 'text-on-surface-variant hover:bg-surface-subtle'
@@ -124,7 +123,7 @@ export default function Schedule() {
                 type="button"
                 onClick={handlePrev}
                 aria-label="Previous"
-                className="rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container"
+                className="rounded-full p-2 text-on-surface-variant transition-colors hover:bg-surface-container"
               >
                 <span className="material-symbols-outlined">chevron_left</span>
               </button>
@@ -135,7 +134,7 @@ export default function Schedule() {
                 type="button"
                 onClick={handleNext}
                 aria-label="Next"
-                className="rounded-full p-1 text-on-surface-variant transition-colors hover:bg-surface-container"
+                className="rounded-full p-2 text-on-surface-variant transition-colors hover:bg-surface-container"
               >
                 <span className="material-symbols-outlined">chevron_right</span>
               </button>

@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/authStore'
-import { useLogout } from '@/hooks/useAuth'
+import { useChangePassword, useLogout } from '@/hooks/useAuth'
 import { ROUTES } from '@/constants/routes'
 import { Role } from '@/constants/roles'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
+import PasswordModal from '@/components/common/PasswordModal'
+import Toast from '@/components/common/Toast'
+import { changePasswordSchema } from '@/features/auth/schemas/password.schema'
 
 const ADMIN_NAV_LINKS = [
   { label: 'Dashboard', icon: 'dashboard', to: ROUTES.ADMIN_DASHBOARD },
@@ -30,6 +33,9 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
   const queryClient = useQueryClient()
   const logoutMutation = useLogout()
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false)
+  const [toast, setToast] = useState(null)
+  const changePassword = useChangePassword()
   const isStaff = user?.role === Role.STAFF
   const navLinks = isStaff ? STAFF_NAV_LINKS : ADMIN_NAV_LINKS
 
@@ -39,13 +45,14 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
     queryClient.clear()
   }
 
+  // The API call revokes the token server-side; if it fails, the user is still signed out here.
   const handleConfirmLogout = async () => {
     try {
       await logoutMutation.mutateAsync()
-      endSession()
-    } catch (err) {
-      if (err?.response?.status === 401) endSession()
+    } catch {
+      // Ignored: ending the session below doesn't depend on the server.
     }
+    endSession()
   }
 
   const openLogoutConfirm = () => {
@@ -72,7 +79,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
           type="button"
           onClick={onToggleCollapse}
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="absolute top-20 -right-3 z-10 hidden h-6 w-6 items-center justify-center rounded-full border border-border-light bg-surface-container-lowest text-on-surface-variant shadow-sm transition-colors hover:bg-surface-container hover:text-primary md:flex"
+          className="absolute top-20 -right-4 z-10 hidden h-6 w-6 items-center justify-center rounded-full border border-border-light bg-surface-container-lowest text-on-surface-variant shadow-sm transition-colors hover:bg-surface-container hover:text-primary md:flex"
         >
           <span className="material-symbols-outlined text-lg">
             {isCollapsed ? 'chevron_right' : 'chevron_left'}
@@ -103,7 +110,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
           </div>
           <button
             type="button"
-            title="Create New Task"
+            title="Create Task"
             onClick={() => {
               navigate(isStaff ? ROUTES.STAFF_TASKS_CREATE : ROUTES.ADMIN_TASKS_CREATE)
               onClose()
@@ -113,7 +120,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
             }`}
           >
             <span className="material-symbols-outlined text-lg">add</span>
-            <span className={`whitespace-nowrap ${isCollapsed ? 'md:hidden' : ''}`}>Create New Task</span>
+            <span className={`whitespace-nowrap ${isCollapsed ? 'md:hidden' : ''}`}>Create Task</span>
           </button>
         </div>
 
@@ -162,6 +169,19 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
         </div>
 
         <div className="border-t border-border-light p-unit-sm">
+          {!isStaff && (
+            <button
+              type="button"
+              title="Change Password"
+              onClick={() => setIsPasswordOpen(true)}
+              className={`flex w-full items-center gap-unit-md rounded-lg p-unit-sm text-label-bold font-bold tracking-[0.05em] text-secondary transition-all hover:bg-surface-container ${
+                isCollapsed ? 'md:justify-center' : ''
+              }`}
+            >
+              <span className="material-symbols-outlined shrink-0 text-lg">lock_reset</span>
+              <span className={`whitespace-nowrap ${isCollapsed ? 'md:hidden' : ''}`}>Change Password</span>
+            </button>
+          )}
           <button
             type="button"
             title="Logout"
@@ -176,19 +196,34 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
         </div>
       </nav>
 
+      {isPasswordOpen && (
+        <PasswordModal
+          title="Change your password"
+          fields={[
+            { name: 'currentPassword', label: 'Current password', autoComplete: 'current-password' },
+            { name: 'newPassword', label: 'New password', autoComplete: 'new-password' },
+            { name: 'confirmPassword', label: 'Confirm new password', autoComplete: 'new-password' },
+          ]}
+          schema={changePasswordSchema}
+          submitLabel="Change Password"
+          onSubmit={async ({ currentPassword, newPassword }) => {
+            await changePassword.mutateAsync({ currentPassword, newPassword })
+            setToast({ message: 'Password changed.', tone: 'success' })
+          }}
+          onClose={() => setIsPasswordOpen(false)}
+        />
+      )}
+
+      {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={() => setToast(null)} />}
+
       {isLogoutConfirmOpen && (
         <ConfirmDialog
-          title="Heading out already?"
-          description="You'll be signed out and need to log in again to pick up where you left off."
+          title="Log out?"
+          description="You'll need to sign in again."
           confirmLabel="Logout"
           cancelLabel="Cancel"
           confirmIcon="logout"
           tone="primary"
-          error={
-            logoutMutation.isError
-              ? (logoutMutation.error?.response?.data?.message ?? 'Unable to log out. Please try again.')
-              : null
-          }
           isConfirming={logoutMutation.isPending}
           onConfirm={handleConfirmLogout}
           onCancel={() => setIsLogoutConfirmOpen(false)}

@@ -5,7 +5,7 @@ export function PanelHeader({ icon, title, subtitle, to, linkLabel = 'View all' 
     <div className="flex items-center justify-between gap-unit-sm border-b border-border-light px-unit-lg py-unit-md">
       <div className="min-w-0">
         <h3 className="flex items-center gap-2 font-[var(--font-headline)] text-headline-sm text-on-surface">
-          <span className="material-symbols-outlined text-[19px] text-primary">{icon}</span>
+          <span className="material-symbols-outlined text-[16px] text-primary">{icon}</span>
           {title}
         </h3>
         {subtitle && <p className="text-label-md text-on-surface-variant">{subtitle}</p>}
@@ -13,7 +13,7 @@ export function PanelHeader({ icon, title, subtitle, to, linkLabel = 'View all' 
       {to && (
         <Link to={to} className="flex items-center gap-0.5 text-label-md font-bold whitespace-nowrap text-primary hover:underline">
           {linkLabel}
-          <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+          <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
         </Link>
       )}
     </div>

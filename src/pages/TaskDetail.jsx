@@ -34,7 +34,7 @@ function SectionLabel({ children }) {
 
 function DetailRow({ label, children }) {
   return (
-    <div className="flex items-center justify-between gap-unit-md border-b border-border-light py-3 last:border-b-0">
+    <div className="flex items-center justify-between gap-unit-md border-b border-border-light py-4 last:border-b-0">
       <span className="shrink-0 text-label-md text-on-surface-variant">{label}</span>
       <span className="flex flex-col items-end text-right text-body-md font-bold text-on-surface">{children}</span>
     </div>
@@ -47,7 +47,6 @@ export default function TaskDetail() {
   const user = useAuthStore((state) => state.user)
   const { task, isLoading, isError } = useTask(taskId)
   const updateTask = useTaskStore((state) => state.updateTask)
-  const updateTaskStatusLocal = useTaskStore((state) => state.updateTaskStatus)
   const setDelayReason = useTaskStore((state) => state.setDelayReason)
   const deleteTask = useTaskStore((state) => state.deleteTask)
   const updateStatus = useUpdateTaskStatus()
@@ -56,7 +55,6 @@ export default function TaskDetail() {
   const [isReasonOpen, setIsReasonOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
-  const [statusError, setStatusError] = useState(null)
   const [isCompleteConfirmOpen, setIsCompleteConfirmOpen] = useState(false)
   const [completeConfirmError, setCompleteConfirmError] = useState(null)
 
@@ -102,61 +100,25 @@ export default function TaskDetail() {
   const avatarColor = isOwn ? 'var(--color-primary)' : avatarColorFor(task.assignee?.id)
   const displayStatus = STATUS_META[getDisplayStatus(task)]
   const overdue = isTaskOverdue(task)
-  const statusEditable = isStaff ? isAssignedTo(task, user?.id) : isAdminAssignee(task)
-  const statusLocked = task.status === TASK_STATUS.COMPLETED
-  const canEditStatus = statusEditable && !statusLocked
+  // Only the assignee can complete a task, and completing it is final.
+  const canComplete =
+    (isStaff ? isAssignedTo(task, user?.id) : isAdminAssignee(task)) && task.status !== TASK_STATUS.COMPLETED
   const editable = !isStaff && canEditTask(task)
   const timelineLabel = TIMELINE_OPTIONS.find((option) => option.value === task.timeline)?.label ?? task.timeline
   const showReason = overdue || Boolean(task.delayReason)
   const reasonAuthor = isStaff ? 'You' : assigneeName
 
-  // Applies a status change against the real API, optimistically updating the
-  // local store first and rolling back if the request fails. Returns the error
-  // message on failure so callers (the plain select, or the completion confirm
-  // dialog) can decide where to display it.
-  const commitStatusChange = async (nextStatus) => {
-    const previousStatus = task.status
-    const previousCompletedAt = task.completedAt
-    updateTaskStatusLocal(task.id, nextStatus)
-    try {
-      const response = await updateStatus.mutateAsync({ taskId: task.id, status: nextStatus })
-      // The optimistic update above only set `status` — completedAt comes back
-      // from the server (set/cleared there), so reconcile it from the real
-      // response rather than computing it client-side.
-      updateTask(task.id, { completedAt: response?.data?.task?.completionAt ?? null })
-      return null
-    } catch (error) {
-      updateTaskStatusLocal(task.id, previousStatus)
-      updateTask(task.id, { completedAt: previousCompletedAt })
-      return error?.response?.data?.message ?? 'Unable to update status. Please try again.'
-    }
-  }
-
-  const handleStatusChange = async (nextStatus) => {
-    setStatusError(null)
-    const errorMessage = await commitStatusChange(nextStatus)
-    if (errorMessage) setStatusError(errorMessage)
-  }
-
-  // Marking a task Completed locks it from further status changes (see
-  // statusLocked below), so confirm before committing — same "YES or NO"
-  // pattern as Delete.
-  const handleSelectStatus = (nextStatus) => {
-    if (nextStatus === TASK_STATUS.COMPLETED) {
-      setCompleteConfirmError(null)
-      setIsCompleteConfirmOpen(true)
-    } else {
-      handleStatusChange(nextStatus)
-    }
-  }
-
   const handleConfirmComplete = async () => {
     setCompleteConfirmError(null)
-    const errorMessage = await commitStatusChange(TASK_STATUS.COMPLETED)
-    if (errorMessage) {
-      setCompleteConfirmError(errorMessage)
-    } else {
+    try {
+      const response = await updateStatus.mutateAsync({ taskId: task.id, status: TASK_STATUS.COMPLETED })
+      updateTask(task.id, {
+        status: TASK_STATUS.COMPLETED,
+        completedAt: response?.data?.task?.completionAt ?? new Date().toISOString(),
+      })
       setIsCompleteConfirmOpen(false)
+    } catch (error) {
+      setCompleteConfirmError(error?.response?.data?.message ?? 'Could not update the task. Please try again.')
     }
   }
 
@@ -171,14 +133,12 @@ export default function TaskDetail() {
     }
   }
 
-  const deleteDescription = `“${task.title}” will be removed from the Task Board for everyone${
-    isOwn ? '' : `, including ${assigneeName}`
-  }. This action cannot be undone.`
+  const deleteDescription = `“${task.title}” will be deleted. This can't be undone.`
 
   return (
     <>
-      <nav className="flex flex-wrap items-center gap-1.5 text-label-md text-on-surface-variant">
-        <Link to={boardRoute} className="flex items-center gap-1 font-bold hover:text-on-surface">
+      <nav className="flex flex-wrap items-center gap-2 text-label-md text-on-surface-variant">
+        <Link to={boardRoute} className="flex items-center gap-2 font-bold hover:text-on-surface">
           <span className="material-symbols-outlined text-[16px]">arrow_back</span>
           Task Board
         </Link>
@@ -192,59 +152,32 @@ export default function TaskDetail() {
             {task.title}
           </h2>
           <div className="flex flex-wrap items-center gap-2">
-            {!canEditStatus && (
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-label-md font-bold ${displayStatus.bgClass} ${displayStatus.textClass}`}
-              >
-                <span className={`h-1.5 w-1.5 rounded-full ${displayStatus.dotClass}`} />
-                {displayStatus.label}
-              </span>
-            )}
-            <span className="inline-flex items-center gap-2 rounded-full border border-border-light bg-surface-container-lowest px-3 py-1 text-label-md font-medium text-on-surface-variant">
+            <span
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-label-md font-bold ${displayStatus.bgClass} ${displayStatus.textClass}`}
+            >
+              <span className={`h-2 w-2 rounded-full ${displayStatus.dotClass}`} />
+              {displayStatus.label}
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-border-light bg-surface-container-lowest px-4 py-2 text-label-md font-medium text-on-surface-variant">
               <span className={`h-2 w-2 rounded-full ${PRIORITY_DOT_CLASS[task.priority]}`} />
               {capitalize(task.priority)} priority
             </span>
-            {!statusEditable && (
-              <span className="inline-flex items-center gap-1 text-label-md text-on-surface-variant">
-                <span className="material-symbols-outlined text-[14px]">lock</span>
-                Status is set by the assignee
-              </span>
-            )}
-            {statusEditable && statusLocked && (
-              <span className="inline-flex items-center gap-1 text-label-md text-on-surface-variant">
-                <span className="material-symbols-outlined text-[14px]">lock</span>
-                Completed — status is locked
-              </span>
-            )}
-            {canEditStatus && isStaff && (
-              <span className="inline-flex items-center gap-1 text-label-md text-on-surface-variant">
-                <span className="material-symbols-outlined text-[14px]">edit_off</span>
-                Only you can change the status
-              </span>
-            )}
           </div>
         </div>
 
-        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-          {canEditStatus && (
-            <>
-              <label htmlFor="taskStatus" className="text-label-md font-bold text-on-surface-variant">
-                Status
-              </label>
-              <select
-                id="taskStatus"
-                value={task.status}
-                disabled={updateStatus.isPending}
-                onChange={(event) => handleSelectStatus(event.target.value)}
-                className={`cursor-pointer rounded-full border border-dashed py-2 pr-7 pl-4 text-label-md font-bold disabled:cursor-not-allowed disabled:opacity-60 ${displayStatus.textClass} ${displayStatus.bgClass}`}
-                style={{ borderColor: 'currentColor' }}
-              >
-                <option value="todo">To Do</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-              </select>
-              {statusError && <p className="w-full text-sm text-error">{statusError}</p>}
-            </>
+        <div className="flex w-full flex-wrap items-center gap-4 sm:w-auto">
+          {canComplete && (
+            <button
+              type="button"
+              onClick={() => {
+                setCompleteConfirmError(null)
+                setIsCompleteConfirmOpen(true)
+              }}
+              className="flex items-center gap-2 rounded-lg bg-status-completed px-4 py-2 text-label-bold font-bold text-white transition-opacity hover:opacity-90"
+            >
+              <span className="material-symbols-outlined text-[16px]">check_circle</span>
+              Mark as completed
+            </button>
           )}
           {!isStaff && (
             <>
@@ -252,10 +185,10 @@ export default function TaskDetail() {
                 type="button"
                 onClick={() => setIsEditOpen(true)}
                 disabled={!editable}
-                title={editable ? 'Edit task' : 'Locked — this staff task is past To Do'}
+                title={editable ? 'Edit task' : 'Locked once completed'}
                 className="flex items-center gap-2 rounded-lg border border-border-light bg-surface-container-lowest px-4 py-2 text-label-bold font-bold text-on-surface transition-colors hover:bg-surface-subtle disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-[18px]">{editable ? 'edit' : 'lock'}</span>
+                <span className="material-symbols-outlined text-[16px]">{editable ? 'edit' : 'lock'}</span>
                 Edit
               </button>
               <button
@@ -266,7 +199,7 @@ export default function TaskDetail() {
                 }}
                 className="flex items-center gap-2 rounded-lg border border-error-container bg-surface-container-lowest px-4 py-2 text-label-bold font-bold text-error transition-colors hover:bg-error-container"
               >
-                <span className="material-symbols-outlined text-[18px]">delete</span>
+                <span className="material-symbols-outlined text-[16px]">delete</span>
                 Delete
               </button>
             </>
@@ -288,9 +221,9 @@ export default function TaskDetail() {
                 href={resolveAttachmentUrl(task.attachmentUrl)}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2.5 rounded-lg border border-border-light bg-surface-subtle px-3 py-2 text-body-md font-semibold text-on-surface hover:bg-surface-container"
+                className="inline-flex items-center gap-2 rounded-lg border border-border-light bg-surface-subtle px-4 py-2 text-body-md font-semibold text-on-surface hover:bg-surface-container"
               >
-                <span className="material-symbols-outlined text-[20px] text-primary">description</span>
+                <span className="material-symbols-outlined text-[24px] text-primary">description</span>
                 {attachmentFileName(task.attachmentUrl)}
               </a>
             </div>
@@ -313,7 +246,7 @@ export default function TaskDetail() {
                   <button
                     type="button"
                     onClick={() => setIsReasonOpen(true)}
-                    className="flex items-center gap-1.5 rounded-lg border border-border-light bg-surface-container-lowest px-3 py-1.5 text-label-md font-bold text-on-surface transition-colors hover:bg-surface-subtle"
+                    className="flex items-center gap-2 rounded-lg border border-border-light bg-surface-container-lowest px-4 py-2 text-label-md font-bold text-on-surface transition-colors hover:bg-surface-subtle"
                   >
                     <span className="material-symbols-outlined text-[16px]">
                       {task.delayReason ? 'edit_note' : 'add_comment'}
@@ -321,17 +254,14 @@ export default function TaskDetail() {
                     {task.delayReason ? 'Edit reason' : 'Add reason'}
                   </button>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-label-md font-bold text-on-surface-variant">
-                    <span className="material-symbols-outlined text-[14px]">visibility</span>
-                    Added by staff · read-only
-                  </span>
+                  null
                 )}
               </div>
               {task.delayReason ? (
                 <div className="rounded-xl border border-status-delayed/30 bg-status-delayed/10 p-unit-md">
                   <p className="mb-2 flex flex-wrap items-center gap-2 text-label-md text-on-surface-variant">
                     <span
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-on-primary"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[16px] font-bold text-on-primary"
                       style={{ backgroundColor: avatarColor }}
                     >
                       {isOwn ? 'Y' : initialsOf(assigneeName)}
@@ -345,20 +275,18 @@ export default function TaskDetail() {
                 </div>
               ) : (
                 <p className="rounded-xl border border-dashed border-border-light p-unit-md text-body-md text-on-surface-variant">
-                  {isStaff
-                    ? 'This task is overdue. Add a reason so admin can see why.'
-                    : 'No reason has been added by the assignee yet.'}
+                  No reason added yet.
                 </p>
               )}
             </div>
           )}
         </section>
 
-        <aside className="rounded-xl border border-border-light bg-surface-container-lowest px-unit-lg py-1.5 shadow-sm">
+        <aside className="rounded-xl border border-border-light bg-surface-container-lowest px-unit-lg py-2 shadow-sm">
           <DetailRow label="Assignee">
             <span className="flex items-center gap-2">
               <span
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-on-primary"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[16px] font-bold text-on-primary"
                 style={{ backgroundColor: avatarColor }}
               >
                 {isOwn ? 'Y' : initialsOf(assigneeName)}
@@ -396,8 +324,8 @@ export default function TaskDetail() {
         <ConfirmDialog
           title="Delete this task?"
           description={deleteDescription}
-          confirmLabel="Yes, Delete"
-          cancelLabel="No"
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
           error={deleteError}
           isConfirming={deleteTaskMutation.isPending}
           onConfirm={handleConfirmDelete}
@@ -408,11 +336,10 @@ export default function TaskDetail() {
       {isCompleteConfirmOpen && (
         <ConfirmDialog
           title="Mark this task as completed?"
-          description="Once you mark this task as completed, it will be logged and you won't be able to change it afterward. Are you sure you want to continue?"
-          confirmLabel="Yes"
-          cancelLabel="No"
+          description="This can't be undone."
+          confirmLabel="Mark as completed"
+          cancelLabel="Cancel"
           confirmIcon="check"
-          tone="danger"
           error={completeConfirmError}
           isConfirming={updateStatus.isPending}
           onConfirm={handleConfirmComplete}

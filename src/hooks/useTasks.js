@@ -97,13 +97,11 @@ export const useSyncedTasks = () => {
   }
 }
 
-// The task boards and the staff dashboard only ever show a window of days (this week, last week, a custom
-// range, yesterday-to-tomorrow), so they ask the API for just that window - see GET /tasks `range`.
-// `filters` is { range, from, to }. Returns the tasks plus the range the server resolved (its from/to
-// are the real first and last day, e.g. Monday and Sunday of "this week").
-export const useTasksInRange = (filters, { enabled = true } = {}) => {
+// Every task matching `filters` (see GET /tasks: status, range, from, to, ...), all pages read. Used by
+// the staff dashboard's short lists. Returns the tasks plus the response's counts and resolved range.
+export const useTaskList = (filters, { enabled = true } = {}) => {
   const query = useQuery({
-    queryKey: ['tasks', 'list', 'range', filters.range, filters.from ?? null, filters.to ?? null],
+    queryKey: ['tasks', 'list', 'filtered', filters],
     queryFn: () => tasksService.listAll(filters),
     enabled,
     staleTime: 0,
@@ -117,6 +115,7 @@ export const useTasksInRange = (filters, { enabled = true } = {}) => {
 
   return {
     tasks,
+    counts: query.data?.counts ?? null,
     range: query.data?.range ?? null,
     isLoading: enabled && query.isLoading,
     isError: query.isError,
@@ -151,11 +150,11 @@ export const useTask = (taskId) => {
 }
 
 // Boards show this many tasks per page; the API does the paging, searching and status/assignee filtering
-// so a long range (e.g. a busy week) never loads in one go. 25 sits in the 20-30 the client asked for.
+// so a long list never loads in one go. 25 sits in the 20-30 the client asked for.
 export const TASKS_PAGE_SIZE = 25
 
-// One page of a task board. `filters` is { range, from, to, search, status, assigneeType, assigneeId,
-// page }. The previous page stays on screen while the next one loads, so paging doesn't flash empty.
+// One page of a task board. `filters` is { status, search, assigneeType, assigneeId, page }.
+// The previous page stays on screen while the next one loads, so paging doesn't flash empty.
 export const useTasksPage = (filters, { enabled = true } = {}) => {
   const params = { ...filters, limit: TASKS_PAGE_SIZE }
   const query = useQuery({

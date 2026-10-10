@@ -37,6 +37,11 @@ export const useUpdateStaffStatus = () =>
     mutationFn: ({ staffId, status }) => staffService.updateStatus(staffId, status),
   })
 
+export const useResetStaffPassword = () =>
+  useMutation({
+    mutationFn: ({ staffId, password }) => staffService.resetPassword(staffId, password),
+  })
+
 export const useUpdateStaff = () =>
   useMutation({
     mutationFn: ({ staffId, values }) => staffService.update(staffId, values),

@@ -130,7 +130,7 @@ export default function EditTaskModal({ task, onClose }) {
             {task.attachmentUrl && (
               <div className="flex items-center gap-2 rounded-lg border border-border-light bg-surface-subtle px-4 py-2">
                 <span className="flex items-center gap-2 text-body-md text-on-surface">
-                  <span className="material-symbols-outlined text-[18px] text-on-surface-variant">description</span>
+                  <span className="material-symbols-outlined text-[16px] text-on-surface-variant">description</span>
                   Current: {attachmentFileName(task.attachmentUrl)}
                 </span>
               </div>
@@ -193,7 +193,7 @@ export default function EditTaskModal({ task, onClose }) {
             </div>
           )}
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             <span className="block text-label-bold font-bold text-on-surface">Priority Level</span>
             <div className="flex gap-4">
               {PRIORITY_OPTIONS.map((option) => (
@@ -207,20 +207,20 @@ export default function EditTaskModal({ task, onClose }) {
 
           {apiError && <p className="text-sm text-error">{apiError}</p>}
 
-          <div className="flex justify-end gap-3 border-t border-border-light pt-unit-lg">
+          <div className="flex justify-end gap-4 border-t border-border-light pt-unit-lg">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-border-light bg-transparent px-6 py-2.5 text-label-bold font-bold text-on-surface-variant transition-colors hover:bg-surface-subtle hover:text-on-surface"
+              className="rounded-lg border border-border-light bg-transparent px-6 py-2 text-label-bold font-bold text-on-surface-variant transition-colors hover:bg-surface-subtle hover:text-on-surface"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || updateTask.isPending}
-              className="flex items-center justify-center gap-2 rounded-lg bg-primary-container px-6 py-2.5 text-label-bold font-bold text-on-primary shadow-sm transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-70"
+              className="flex items-center justify-center gap-2 rounded-lg bg-primary-container px-6 py-2 text-label-bold font-bold text-on-primary shadow-sm transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-70"
             >
-              <span className="material-symbols-outlined text-[18px]">check</span>
+              <span className="material-symbols-outlined text-[16px]">check</span>
               {isSubmitting || updateTask.isPending ? 'Saving…' : 'Save Changes'}
             </button>
           </div>

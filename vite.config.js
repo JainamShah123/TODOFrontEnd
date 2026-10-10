@@ -9,29 +9,27 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // Installable PWA without offline caching: src/sw.js passes every request to the network, so the app
+    // always loads the latest deploy. No precache manifest is injected (injectionPoint: undefined).
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectRegister: 'script',
+      injectManifest: { injectionPoint: undefined },
+      includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Vibrant Document Reader',
-        short_name: 'DocReader',
-        description: 'Vibrant Document Reader',
+        name: 'TaskMaster Pro',
+        short_name: 'TaskMaster',
+        description: 'Staff task management',
         start_url: '/',
         display: 'standalone',
-        theme_color: '#0f172a',
+        theme_color: '#006c49',
         background_color: '#ffffff',
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-        ],
-      },
-      workbox: {
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\/api\/v1\/.*/,
-            handler: 'NetworkFirst',
-            options: { cacheName: 'api-cache' },
-          },
+          { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
     }),

@@ -3,13 +3,13 @@ import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { countChars, countWords, formatFullTimestamp } from '@/features/notes/utils/notes.utils'
 
 const CHECKLIST_HTML =
-  '<div class="flex flex-col gap-1.5 my-2 bg-surface-container-low/40 p-3 rounded-lg"><label class="flex items-center gap-2.5 cursor-pointer"><input type="checkbox" class="h-4 w-4 rounded accent-primary" /><span>New action item</span></label></div>'
+  '<div class="flex flex-col gap-2 my-2 bg-surface-container-low/40 p-4 rounded-lg"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="h-4 w-4 rounded accent-primary" /><span>New action item</span></label></div>'
 
 const CODE_BLOCK_HTML =
   '<pre class="bg-surface-subtle text-on-surface p-unit-md rounded-lg font-mono text-sm overflow-x-auto shadow-inner my-2"># Enter your code here...</pre>'
 
 const TABLE_HTML =
-  '<table class="w-full my-3 text-left text-sm"><thead><tr class="bg-surface-container-high text-on-surface"><th class="p-2 rounded-tl">Param</th><th class="p-2">Type</th><th class="p-2 rounded-tr">Description</th></tr></thead><tbody><tr class="bg-surface-container-lowest"><td class="p-2 font-mono">key</td><td class="p-2">string</td><td class="p-2">Description</td></tr></tbody></table>'
+  '<table class="w-full my-4 text-left text-sm"><thead><tr class="bg-surface-container-high text-on-surface"><th class="p-2 rounded-tl">Param</th><th class="p-2">Type</th><th class="p-2 rounded-tr">Description</th></tr></thead><tbody><tr class="bg-surface-container-lowest"><td class="p-2 font-mono">key</td><td class="p-2">string</td><td class="p-2">Description</td></tr></tbody></table>'
 
 export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onToggleArchive }) {
   const richEditorRef = useRef(null)
@@ -96,10 +96,10 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
 
   return (
     <div className="flex flex-col overflow-hidden rounded-xl bg-surface-container-lowest shadow-md lg:col-span-8">
-      <div className="flex flex-wrap items-center justify-between gap-unit-sm bg-surface-subtle px-unit-lg py-3">
+      <div className="flex flex-wrap items-center justify-between gap-unit-sm bg-surface-subtle px-unit-lg py-4">
         <div className="flex items-center gap-unit-xs text-on-surface-variant">
           <span
-            className={`material-symbols-outlined text-[18px] ${
+            className={`material-symbols-outlined text-[16px] ${
               saveStatus === 'error'
                 ? 'text-error'
                 : saveStatus === 'dirty'
@@ -139,11 +139,11 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
             type="button"
             onClick={() => onTogglePin(note.id)}
             title={note.pinned ? 'Unpin note' : 'Pin note'}
-            className={`rounded-lg p-1.5 transition-colors hover:bg-surface-container ${
+            className={`rounded-lg p-2 transition-colors hover:bg-surface-container ${
               note.pinned ? 'text-primary' : 'text-on-surface-variant'
             }`}
           >
-            <span className="material-symbols-outlined text-[20px]" data-weight={note.pinned ? 'fill' : undefined}>
+            <span className="material-symbols-outlined text-[24px]" data-weight={note.pinned ? 'fill' : undefined}>
               keep
             </span>
           </button>
@@ -151,9 +151,9 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
             type="button"
             onClick={() => onToggleArchive(note.id)}
             title={note.archived ? 'Unarchive note' : 'Archive note'}
-            className="rounded-lg p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container"
+            className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container"
           >
-            <span className="material-symbols-outlined text-[20px]">
+            <span className="material-symbols-outlined text-[24px]">
               {note.archived ? 'unarchive' : 'archive'}
             </span>
           </button>
@@ -161,28 +161,28 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
             type="button"
             onClick={toggleSourceMode}
             title="Toggle Code / Visual view"
-            className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-label-bold font-bold transition-colors ${
+            className={`flex items-center gap-2 rounded-lg px-2 py-2 text-label-bold font-bold transition-colors ${
               isSourceMode ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface hover:bg-surface-container'
             }`}
           >
-            <span className="material-symbols-outlined text-[18px]">code</span>
+            <span className="material-symbols-outlined text-[16px]">code</span>
             <span className="hidden sm:inline">&lt; / &gt; HTML Source</span>
           </button>
           <button
             type="button"
             onClick={() => setIsDeleteConfirmOpen(true)}
             title="Delete note"
-            className="rounded-lg p-1.5 text-on-surface-variant transition-colors hover:bg-error-container hover:text-on-error-container"
+            className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-error-container hover:text-on-error-container"
           >
-            <span className="material-symbols-outlined text-[20px]">delete</span>
+            <span className="material-symbols-outlined text-[24px]">delete</span>
           </button>
           <button
             type="button"
             onClick={handleManualSave}
             disabled={!canSave}
-            className="flex items-center gap-1 rounded-lg bg-primary-container px-unit-md py-1.5 text-label-bold font-bold text-on-primary shadow-sm transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-primary-container px-unit-md py-2 text-label-bold font-bold text-on-primary shadow-sm transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-[18px]">save</span>
+            <span className="material-symbols-outlined text-[16px]">save</span>
             Save Note
           </button>
         </div>
@@ -201,8 +201,8 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1 bg-surface-container-low px-unit-lg py-2 text-on-surface-variant select-none">
-        <div className="flex items-center gap-0.5 rounded-lg bg-surface-container-lowest p-1 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2 bg-surface-container-low px-unit-lg py-2 text-on-surface-variant select-none">
+        <div className="flex items-center gap-0.5 rounded-lg bg-surface-container-lowest p-2 shadow-sm">
           {[
             ['format_bold', 'bold', 'Bold'],
             ['format_italic', 'italic', 'Italic'],
@@ -217,14 +217,14 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
                 event.preventDefault()
                 exec(command)
               }}
-              className="flex h-7 w-7 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
+              className="flex h-8 w-8 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
             >
-              <span className="material-symbols-outlined text-[18px]">{icon}</span>
+              <span className="material-symbols-outlined text-[16px]">{icon}</span>
             </button>
           ))}
         </div>
 
-        <div className="flex items-center rounded-lg bg-surface-container-lowest px-2 py-1 shadow-sm">
+        <div className="flex items-center rounded-lg bg-surface-container-lowest px-2 py-2 shadow-sm">
           <select
             defaultValue="p"
             onChange={(event) => exec('formatBlock', `<${event.target.value}>`)}
@@ -237,7 +237,7 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
           </select>
         </div>
 
-        <div className="flex items-center gap-0.5 rounded-lg bg-surface-container-lowest p-1 shadow-sm">
+        <div className="flex items-center gap-0.5 rounded-lg bg-surface-container-lowest p-2 shadow-sm">
           <button
             type="button"
             title="Bulleted List"
@@ -245,9 +245,9 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
               event.preventDefault()
               exec('insertUnorderedList')
             }}
-            className="flex h-7 w-7 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
+            className="flex h-8 w-8 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
           >
-            <span className="material-symbols-outlined text-[18px]">format_list_bulleted</span>
+            <span className="material-symbols-outlined text-[16px]">format_list_bulleted</span>
           </button>
           <button
             type="button"
@@ -256,9 +256,9 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
               event.preventDefault()
               exec('insertOrderedList')
             }}
-            className="flex h-7 w-7 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
+            className="flex h-8 w-8 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
           >
-            <span className="material-symbols-outlined text-[18px]">format_list_numbered</span>
+            <span className="material-symbols-outlined text-[16px]">format_list_numbered</span>
           </button>
           <button
             type="button"
@@ -267,13 +267,13 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
               event.preventDefault()
               exec('insertHTML', CHECKLIST_HTML)
             }}
-            className="flex h-7 w-7 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
+            className="flex h-8 w-8 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
           >
-            <span className="material-symbols-outlined text-[18px]">checklist</span>
+            <span className="material-symbols-outlined text-[16px]">checklist</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-0.5 rounded-lg bg-surface-container-lowest p-1 shadow-sm">
+        <div className="flex items-center gap-0.5 rounded-lg bg-surface-container-lowest p-2 shadow-sm">
           <button
             type="button"
             title="Blockquote"
@@ -281,9 +281,9 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
               event.preventDefault()
               exec('formatBlock', '<blockquote>')
             }}
-            className="flex h-7 w-7 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
+            className="flex h-8 w-8 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
           >
-            <span className="material-symbols-outlined text-[18px]">format_quote</span>
+            <span className="material-symbols-outlined text-[16px]">format_quote</span>
           </button>
           <button
             type="button"
@@ -292,18 +292,18 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
               event.preventDefault()
               exec('insertHTML', CODE_BLOCK_HTML)
             }}
-            className="flex h-7 w-7 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
+            className="flex h-8 w-8 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
           >
-            <span className="material-symbols-outlined text-[18px]">terminal</span>
+            <span className="material-symbols-outlined text-[16px]">terminal</span>
           </button>
           <button
             type="button"
             title="Hyperlink"
             onMouseDown={(event) => event.preventDefault()}
             onClick={handleInsertLink}
-            className="flex h-7 w-7 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
+            className="flex h-8 w-8 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
           >
-            <span className="material-symbols-outlined text-[18px]">link</span>
+            <span className="material-symbols-outlined text-[16px]">link</span>
           </button>
           <button
             type="button"
@@ -312,9 +312,9 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
               event.preventDefault()
               exec('insertHTML', TABLE_HTML)
             }}
-            className="flex h-7 w-7 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
+            className="flex h-8 w-8 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
           >
-            <span className="material-symbols-outlined text-[18px]">table_chart</span>
+            <span className="material-symbols-outlined text-[16px]">table_chart</span>
           </button>
           <button
             type="button"
@@ -323,27 +323,27 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
               event.preventDefault()
               exec('insertHorizontalRule')
             }}
-            className="flex h-7 w-7 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
+            className="flex h-8 w-8 items-center justify-center rounded text-on-surface transition-colors hover:bg-surface-container"
           >
-            <span className="material-symbols-outlined text-[18px]">horizontal_rule</span>
+            <span className="material-symbols-outlined text-[16px]">horizontal_rule</span>
           </button>
         </div>
       </div>
 
-      <div className="relative min-h-[380px] flex-1 p-unit-lg">
+      <div className="relative min-h-[384px] flex-1 p-unit-lg">
         <div
           ref={richEditorRef}
           contentEditable
           suppressContentEditableWarning
           onInput={handleRichInput}
-          className={`flex flex-col gap-unit-md text-body-lg leading-relaxed text-on-surface outline-none [&_blockquote]:rounded-r-lg [&_blockquote]:bg-surface-container-low [&_blockquote]:p-unit-md [&_blockquote]:text-on-surface-variant [&_blockquote]:italic [&_h1]:text-headline-md [&_h1]:font-bold [&_h2]:text-headline-sm [&_h2]:font-bold [&_h3]:text-headline-sm [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:pl-5 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-surface-subtle [&_pre]:p-unit-md [&_pre]:font-mono [&_pre]:text-sm [&_pre]:shadow-inner [&_table]:w-full [&_ul]:list-disc [&_ul]:pl-5 ${
+          className={`flex flex-col gap-unit-md text-body-lg leading-relaxed text-on-surface outline-none [&_blockquote]:rounded-r-lg [&_blockquote]:bg-surface-container-low [&_blockquote]:p-unit-md [&_blockquote]:text-on-surface-variant [&_blockquote]:italic [&_h1]:text-headline-md [&_h1]:font-bold [&_h2]:text-headline-sm [&_h2]:font-bold [&_h3]:text-headline-sm [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-surface-subtle [&_pre]:p-unit-md [&_pre]:font-mono [&_pre]:text-sm [&_pre]:shadow-inner [&_table]:w-full [&_ul]:list-disc [&_ul]:pl-6 ${
             isSourceMode ? 'hidden' : ''
           }`}
         />
         <textarea
           value={contentHtml}
           onChange={handleSourceChange}
-          className={`min-h-[380px] w-full resize-y rounded-lg bg-inverse-surface p-unit-md font-mono text-sm text-inverse-on-surface outline-none ${
+          className={`min-h-[384px] w-full resize-y rounded-lg bg-inverse-surface p-unit-md font-mono text-sm text-inverse-on-surface outline-none ${
             isSourceMode ? '' : 'hidden'
           }`}
         />
@@ -373,9 +373,9 @@ export default function NoteEditor({ note, onSave, onDelete, onTogglePin, onTogg
             type="button"
             onClick={handleManualSave}
             disabled={!canSave}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary-container px-unit-lg py-2 text-label-bold font-bold text-on-primary shadow-md transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary-container px-unit-lg py-2 text-label-bold font-bold text-on-primary shadow-md transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
           >
-            <span className="material-symbols-outlined text-[18px]">check</span>
+            <span className="material-symbols-outlined text-[16px]">check</span>
             Save Note
           </button>
         </div>

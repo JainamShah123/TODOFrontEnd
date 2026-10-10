@@ -18,14 +18,14 @@ const Input = forwardRef(function Input(
       )}
       <div className="relative">
         {icon && (
-          <span className="material-symbols-outlined pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[20px] text-outline-variant">
+          <span className="material-symbols-outlined pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[24px] text-outline-variant">
             {icon}
           </span>
         )}
         <input
           id={id}
           ref={ref}
-          className={`block w-full rounded-lg border border-border-light bg-surface-container-lowest py-3 pr-3 font-[var(--font-body)] text-body-md text-on-surface placeholder-outline transition-shadow focus:border-primary focus:ring-2 focus:ring-primary focus:outline-none ${icon ? 'pl-10' : 'pl-3'} ${rightElement ? 'pr-10' : ''} ${className}`}
+          className={`block w-full rounded-lg border border-border-light bg-surface-container-lowest py-4 pr-4 font-[var(--font-body)] text-body-md text-on-surface placeholder-outline transition-shadow focus:border-primary focus:ring-2 focus:ring-primary focus:outline-none ${icon ? 'pl-10' : 'pl-4'} ${rightElement ? 'pr-10' : ''} ${className}`}
           {...props}
         />
         {rightElement}

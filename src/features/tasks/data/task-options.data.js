@@ -10,12 +10,6 @@ export const TIMELINE_OPTIONS = [
   { value: 'monthly', label: 'Monthly' },
 ]
 
-export const STATUS_OPTIONS = [
-  { value: 'todo', label: 'To Do' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'completed', label: 'Completed' },
-]
-
 export const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Low', accentClass: 'accent-status-scheduled' },
   { value: 'medium', label: 'Medium', accentClass: 'accent-status-pending' },

@@ -86,7 +86,7 @@ export default function ComposeNoticeForm({ notice }) {
           id="noticeMessage"
           rows={5}
           placeholder="Write the announcement staff will see..."
-          className="w-full resize-y rounded-lg border border-border-light bg-surface-subtle px-4 py-3 text-body-md text-on-surface placeholder-outline transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
+          className="w-full resize-y rounded-lg border border-border-light bg-surface-subtle px-4 py-4 text-body-md text-on-surface placeholder-outline transition-shadow focus:border-primary-container focus:ring-2 focus:ring-primary-container focus:outline-none"
           {...register('message')}
         />
         <p className="text-right text-label-md text-on-surface-variant">{(message ?? '').length} characters</p>
@@ -116,7 +116,7 @@ export default function ComposeNoticeForm({ notice }) {
               </label>
 
               <div className="relative">
-                <span className="material-symbols-outlined absolute top-1/2 left-3 -translate-y-1/2 text-[18px] text-on-surface-variant">
+                <span className="material-symbols-outlined absolute top-1/2 left-4 -translate-y-1/2 text-[16px] text-on-surface-variant">
                   search
                 </span>
                 <input
@@ -128,7 +128,7 @@ export default function ComposeNoticeForm({ notice }) {
                 />
               </div>
 
-              <div className="flex items-center justify-between border-b border-dashed border-border-light px-1 py-2">
+              <div className="flex items-center justify-between border-b border-dashed border-border-light px-2 py-2">
                 <label className="flex cursor-pointer items-center gap-2 text-label-bold font-bold text-on-surface">
                   <input
                     type="checkbox"
@@ -138,17 +138,17 @@ export default function ComposeNoticeForm({ notice }) {
                   />
                   Select All Staff
                 </label>
-                <span className="rounded-full bg-status-completed/10 px-2.5 py-1 text-label-md font-bold text-primary">
+                <span className="rounded-full bg-status-completed/10 px-2 py-2 text-label-md font-bold text-primary">
                   {selected.length} of {allIds.length} selected
                 </span>
               </div>
 
-              <div className="max-h-60 space-y-0.5 overflow-y-auto rounded-lg border border-border-light p-1.5">
+              <div className="max-h-60 space-y-0.5 overflow-y-auto rounded-lg border border-border-light p-2">
                 {staffLoading && (
-                  <p className="p-3 text-center text-label-md text-on-surface-variant">Loading staff…</p>
+                  <p className="p-4 text-center text-label-md text-on-surface-variant">Loading staff…</p>
                 )}
                 {staffError && !staffLoading && (
-                  <p className="p-3 text-center text-label-md text-error">
+                  <p className="p-4 text-center text-label-md text-error">
                     Couldn't load staff members. Please refresh the page.
                   </p>
                 )}
@@ -157,7 +157,7 @@ export default function ComposeNoticeForm({ notice }) {
                   filteredStaff.map((member) => (
                   <label
                     key={member.id}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg p-2 hover:bg-surface-subtle"
+                    className="flex cursor-pointer items-center gap-4 rounded-lg p-2 hover:bg-surface-subtle"
                   >
                     <input
                       type="checkbox"
@@ -166,7 +166,7 @@ export default function ComposeNoticeForm({ notice }) {
                       className="h-4 w-4 shrink-0 accent-primary-container"
                     />
                     <div
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-on-primary"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[16px] font-bold text-on-primary"
                       style={{ backgroundColor: avatarColorFor(member.id) }}
                     >
                       {initialsOf(member.firstName, member.lastName)}
@@ -178,7 +178,7 @@ export default function ComposeNoticeForm({ notice }) {
                       <p className="truncate text-label-md text-on-surface-variant">{member.email || '—'}</p>
                     </div>
                     <span
-                      className={`ml-auto h-1.5 w-1.5 shrink-0 rounded-full ${
+                      className={`ml-auto h-2 w-2 shrink-0 rounded-full ${
                         member.status === 'active' ? 'bg-status-completed' : 'bg-outline'
                       }`}
                       title={member.status === 'active' ? 'Active' : 'Inactive'}
@@ -186,7 +186,7 @@ export default function ComposeNoticeForm({ notice }) {
                   </label>
                 ))}
                 {!staffLoading && !staffError && filteredStaff.length === 0 && (
-                  <p className="p-3 text-center text-label-md text-on-surface-variant">No staff match your search.</p>
+                  <p className="p-4 text-center text-label-md text-on-surface-variant">No staff match your search.</p>
                 )}
               </div>
 
@@ -204,26 +204,26 @@ export default function ComposeNoticeForm({ notice }) {
       )}
 
       <div className="flex flex-col items-center justify-between gap-4 border-t border-border-light pt-unit-lg md:flex-row">
-        <p className="flex items-center gap-1.5 text-label-md text-on-surface-variant">
+        <p className="flex items-center gap-2 text-label-md text-on-surface-variant">
           <span className="material-symbols-outlined text-[16px] text-primary">info</span>
           {isEdit
             ? 'Staff removed from the list will no longer see this notice.'
             : 'Will be sent to staff immediately once submitted.'}
         </p>
-        <div className="flex w-full gap-3 md:w-auto">
+        <div className="flex w-full gap-4 md:w-auto">
           <button
             type="button"
             onClick={() => navigate(ROUTES.ADMIN_BROADCAST)}
-            className="w-full rounded-lg border border-border-light bg-transparent px-6 py-2.5 text-label-bold font-bold text-on-surface-variant transition-colors hover:bg-surface-subtle hover:text-on-surface focus:outline-none focus:ring-2 focus:ring-border-light md:w-auto"
+            className="w-full rounded-lg border border-border-light bg-transparent px-6 py-2 text-label-bold font-bold text-on-surface-variant transition-colors hover:bg-surface-subtle hover:text-on-surface focus:outline-none focus:ring-2 focus:ring-border-light md:w-auto"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting || mutation.isPending || mutation.isSuccess}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-container px-6 py-2.5 text-label-bold font-bold text-on-primary shadow-sm transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-70 md:w-auto"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-container px-6 py-2 text-label-bold font-bold text-on-primary shadow-sm transition-colors hover:bg-primary disabled:cursor-not-allowed disabled:opacity-70 md:w-auto"
           >
-            <span className="material-symbols-outlined text-[18px]">{isEdit ? 'check' : 'send'}</span>
+            <span className="material-symbols-outlined text-[16px]">{isEdit ? 'check' : 'send'}</span>
             {isSubmitting || mutation.isPending
               ? isEdit
                 ? 'Saving…'

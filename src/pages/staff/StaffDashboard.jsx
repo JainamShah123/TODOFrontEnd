@@ -1,32 +1,24 @@
-import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyRow, Panel, PanelHeader } from '@/features/dashboard/components/DashboardPanel'
 import PrivateNotesPanel from '@/features/dashboard/components/PrivateNotesPanel'
+import CompleteTaskButton from '@/features/tasks/components/CompleteTaskButton'
 import { formatNoticeDate } from '@/features/broadcast/utils/broadcast.utils'
 import { useNoticesList } from '@/hooks/useNotices'
-import { useTasksInRange } from '@/hooks/useTasks'
-import {
-  STATUS_META,
-  formatShortDate,
-  formatTime,
-  getDisplayStatus,
-  isAssignedTo,
-  isTaskOverdue,
-} from '@/features/tasks/utils/task.utils'
-import { addDays } from '@/features/tasks/utils/dateRange.utils'
-import { useAuthStore } from '@/store/authStore'
+import { useTaskList } from '@/hooks/useTasks'
+import { STATUS_META, STATUS_TABS, formatDue, formatShortDate, formatTime, getDisplayStatus, isTaskOverdue } from '@/features/tasks/utils/task.utils'
 import { ROUTES } from '@/constants/routes'
 
 const NOTICE_LIMIT = 3
 
-// The dashboard only shows these three days. The API works out which days they are (server time zone),
-// so the browser's clock/time zone can't put a task under the wrong heading.
-const DASHBOARD_RANGE = { range: 'yesterday_to_tomorrow' }
-const DAY_LABELS = ['Yesterday', 'Today', 'Tomorrow']
+// "Do now" is everything delayed plus what's still to do today. The API works out "today" (server time
+// zone), so the browser's clock can't put a task on the wrong day. The delayed list is unfiltered by date,
+// so its counts.byStatus are the staff member's overall numbers for the tiles.
+const DELAYED_FILTERS = { status: 'delayed' }
+const TODAY_FILTERS = { status: 'todo', range: 'today' }
 
 export default function StaffDashboard() {
-  const user = useAuthStore((state) => state.user)
-  const { tasks, range, isLoading, isError } = useTasksInRange(DASHBOARD_RANGE)
+  const delayed = useTaskList(DELAYED_FILTERS)
+  const today = useTaskList(TODAY_FILTERS)
   // The server already scopes this to active notices sent to the caller, and
   // sorts newest-first, so no client-side filtering/sorting is needed here.
   const { data: noticesData, isLoading: noticesLoading, isError: noticesError } = useNoticesList({
@@ -35,27 +27,12 @@ export default function StaffDashboard() {
   })
   const myNotices = noticesData?.data ?? []
 
-  const myTasks = useMemo(
-    () =>
-      tasks
-        .filter((task) => isAssignedTo(task, user?.id))
-        .sort((a, b) => a.dueDate.localeCompare(b.dueDate) || (a.time ?? '').localeCompare(b.time ?? '')),
-    [tasks, user?.id],
-  )
+  // Both lists come back oldest-due first, so delayed ones lead.
+  const doNow = [...delayed.tasks, ...today.tasks]
+  const counts = delayed.counts?.byStatus
+  const isLoading = delayed.isLoading || today.isLoading
+  const isError = delayed.isError || today.isError
 
-  // One group per day, in order, skipping days with nothing due.
-  const dayGroups = useMemo(() => {
-    if (!range?.from) return []
-    return DAY_LABELS.map((label, index) => {
-      const date = addDays(range.from, index)
-      return { label, date, tasks: myTasks.filter((task) => task.dueDate === date) }
-    }).filter((group) => group.tasks.length > 0)
-  }, [range, myTasks])
-
-  const pendingCount = myTasks.filter((task) => task.status !== 'completed').length
-  const delayedCount = myTasks.filter((task) => isTaskOverdue(task)).length
-
-  const firstName = user?.name?.split(' ')[0] ?? 'there'
   const todayLabel = new Date().toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -70,9 +47,6 @@ export default function StaffDashboard() {
           <h2 className="mb-unit-xs font-[var(--font-headline)] text-headline-lg-mobile text-on-surface md:text-display-lg">
             Dashboard
           </h2>
-          <p className="text-body-lg text-on-surface-variant">
-            Welcome back, {firstName}. Here's what's on your plate today.
-          </p>
         </div>
         <div className="flex shrink-0 items-center gap-2 self-start rounded-full border border-border-light bg-surface-container-lowest px-4 py-2 text-label-md font-bold text-on-surface-variant">
           <span className="material-symbols-outlined text-[16px]">calendar_today</span>
@@ -80,85 +54,71 @@ export default function StaffDashboard() {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-unit-md lg:grid-cols-4">
+        {STATUS_TABS.map((key) => {
+          const meta = STATUS_META[key]
+          return (
+            <Link
+              key={key}
+              to={`${ROUTES.STAFF_TASK_BOARD}?tab=${key}`}
+              className="flex flex-col gap-2 rounded-xl border border-border-light bg-surface-container-lowest p-unit-lg shadow-sm transition-colors hover:bg-surface-subtle"
+            >
+              <span className={`flex items-center gap-2 text-label-md font-bold ${meta.textClass}`}>
+                <span className={`h-2 w-2 rounded-full ${meta.dotClass}`} />
+                {meta.label}
+              </span>
+              <span className="font-[var(--font-headline)] text-headline-md text-on-surface tabular-nums">
+                {counts?.[key] ?? '–'}
+              </span>
+            </Link>
+          )
+        })}
+      </div>
+
       <div className="grid grid-cols-1 items-start gap-margin-desktop lg:grid-cols-5">
         <Panel className="lg:col-span-3">
           <PanelHeader
-            icon="assignment"
-            title="My Tasks"
-            subtitle={`Yesterday, today & tomorrow · ${myTasks.length} total · ${pendingCount} pending · ${delayedCount} delayed`}
+            icon="bolt"
+            title="Do Now"
+            subtitle="Delayed tasks and today's tasks"
             to={ROUTES.STAFF_TASK_BOARD}
-            linkLabel="View Task Board"
+            linkLabel="All my tasks"
           />
 
           {isLoading ? (
             <EmptyRow>Loading tasks…</EmptyRow>
           ) : isError ? (
             <EmptyRow>Couldn't load tasks. Please refresh the page.</EmptyRow>
-          ) : myTasks.length === 0 ? (
-            <EmptyRow>You have no tasks due yesterday, today or tomorrow.</EmptyRow>
+          ) : doNow.length === 0 ? (
+            <EmptyRow>All caught up. Nothing is delayed or due today.</EmptyRow>
           ) : (
-            <table className="w-full table-fixed border-collapse text-left">
-              <thead>
-                <tr className="border-b border-border-light bg-surface-subtle text-label-bold font-bold tracking-[0.05em] text-on-surface-variant uppercase">
-                  <th className="py-unit-sm pr-2 pl-unit-lg font-medium">Task</th>
-                  <th className="hidden w-[6.5rem] px-1 py-unit-sm font-medium sm:table-cell">Due date</th>
-                  <th className="hidden w-24 px-1 py-unit-sm font-medium sm:table-cell">Due time</th>
-                  <th className="w-36 py-unit-sm pr-unit-lg pl-1 text-right font-medium">Status</th>
-                </tr>
-              </thead>
-              {dayGroups.map((group) => (
-                <tbody key={group.date} className="divide-y divide-border-light text-body-md text-on-surface">
-                  <tr className="bg-surface-subtle">
-                    <th
-                      colSpan={4}
-                      className="py-unit-xs pr-unit-lg pl-unit-lg text-left text-label-bold font-bold tracking-[0.05em] text-on-surface-variant uppercase"
-                    >
-                      {group.label} · {formatShortDate(group.date)}
-                      <span className="ml-2 font-medium normal-case">
-                        {group.tasks.length} {group.tasks.length === 1 ? 'task' : 'tasks'}
+            <ul className="divide-y divide-border-light">
+              {doNow.map((task) => {
+                const status = STATUS_META[getDisplayStatus(task)]
+                const overdue = isTaskOverdue(task)
+                return (
+                  <li key={task.id} className="flex items-center gap-unit-md px-unit-lg py-unit-md">
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${status.dotClass}`} title={status.label} />
+                    <span className="min-w-0 flex-1">
+                      <Link
+                        to={`${ROUTES.STAFF_TASK_BOARD}/${task.id}`}
+                        className="block truncate text-body-md font-bold text-on-surface hover:text-primary hover:underline"
+                      >
+                        {task.title}
+                      </Link>
+                      <span
+                        className={`block text-label-md ${overdue ? 'font-bold text-status-delayed' : 'text-on-surface-variant'}`}
+                      >
+                        {[formatShortDate(task.dueDate), formatTime(task.time)].filter(Boolean).join(', ')}
+                        {overdue && ` · ${formatDue(task)}`}
+                        {task.broker && <span className="font-normal text-on-surface-variant"> · {task.broker}</span>}
                       </span>
-                    </th>
-                  </tr>
-                  {group.tasks.map((task) => {
-                    const overdue = isTaskOverdue(task)
-                    const status = STATUS_META[getDisplayStatus(task)]
-                    return (
-                      <tr key={task.id} className="transition-colors hover:bg-surface-subtle">
-                        <td className="py-unit-md pr-2 pl-unit-lg">
-                          <Link
-                            to={`${ROUTES.STAFF_TASK_BOARD}/${task.id}`}
-                            className="block font-bold text-on-surface hover:text-primary hover:underline sm:truncate"
-                          >
-                            {task.title}
-                          </Link>
-                          <span
-                            className={`block text-label-md sm:hidden ${overdue ? 'font-bold text-status-delayed' : 'text-on-surface-variant'}`}
-                          >
-                            {formatShortDate(task.dueDate)}
-                          </span>
-                        </td>
-                        <td
-                          className={`hidden px-1 whitespace-nowrap sm:table-cell ${overdue ? 'font-bold text-status-delayed' : 'text-on-surface-variant'}`}
-                        >
-                          {formatShortDate(task.dueDate)}
-                        </td>
-                        <td className="hidden px-1 whitespace-nowrap text-on-surface-variant sm:table-cell">
-                          {formatTime(task.time) ?? '—'}
-                        </td>
-                        <td className="pr-unit-lg pl-1 text-right">
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-label-md font-bold whitespace-nowrap ${status.bgClass} ${status.textClass}`}
-                          >
-                            <span className={`h-1.5 w-1.5 rounded-full ${status.dotClass}`} />
-                            {status.label}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              ))}
-            </table>
+                    </span>
+                    <CompleteTaskButton task={task} />
+                  </li>
+                )
+              })}
+            </ul>
           )}
         </Panel>
 
@@ -172,21 +132,21 @@ export default function StaffDashboard() {
             ) : noticesError ? (
               <EmptyRow>Couldn't load notices. Please refresh the page.</EmptyRow>
             ) : myNotices.length === 0 ? (
-              <EmptyRow>You're all caught up — no notices right now.</EmptyRow>
+              <EmptyRow>No notices.</EmptyRow>
             ) : null}
             {!noticesLoading &&
               !noticesError &&
               myNotices.map((notice) => (
-              <div key={notice.id} className="flex gap-3 border-b border-border-light px-unit-lg py-unit-md last:border-b-0">
-                <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] bg-status-scheduled/10 text-status-scheduled">
-                  <span className="material-symbols-outlined text-[17px]">campaign</span>
+              <div key={notice.id} className="flex gap-4 border-b border-border-light px-unit-lg py-unit-md last:border-b-0">
+                <span className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-[8px] bg-status-scheduled/10 text-status-scheduled">
+                  <span className="material-symbols-outlined text-[16px]">campaign</span>
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-body-md font-bold text-on-surface">{notice.title}</span>
                   {notice.message && (
                     <span className="block text-label-md text-on-surface-variant">{notice.message}</span>
                   )}
-                  <span className="mt-1 block text-label-md text-on-surface-variant">
+                  <span className="mt-2 block text-label-md text-on-surface-variant">
                     From Admin · {formatNoticeDate(notice.createdAt)}
                   </span>
                 </span>

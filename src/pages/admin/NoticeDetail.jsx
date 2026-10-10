@@ -9,7 +9,7 @@ function SectionLabel({ children }) {
 
 function DetailRow({ label, children }) {
   return (
-    <div className="flex items-center justify-between gap-unit-md border-b border-border-light py-3 last:border-b-0">
+    <div className="flex items-center justify-between gap-unit-md border-b border-border-light py-4 last:border-b-0">
       <span className="shrink-0 text-label-md text-on-surface-variant">{label}</span>
       <span className="flex flex-col items-end text-right text-body-md font-bold text-on-surface">{children}</span>
     </div>
@@ -43,8 +43,8 @@ export default function NoticeDetail() {
 
   return (
     <>
-      <nav className="flex flex-wrap items-center gap-1.5 text-label-md text-on-surface-variant">
-        <Link to={ROUTES.ADMIN_BROADCAST} className="flex items-center gap-1 font-bold hover:text-on-surface">
+      <nav className="flex flex-wrap items-center gap-2 text-label-md text-on-surface-variant">
+        <Link to={ROUTES.ADMIN_BROADCAST} className="flex items-center gap-2 font-bold hover:text-on-surface">
           <span className="material-symbols-outlined text-[16px]">arrow_back</span>
           Broadcast / Notice
         </Link>
@@ -70,16 +70,16 @@ export default function NoticeDetail() {
 
           <div className="p-unit-lg">
             <SectionLabel>Sent To ({notice.recipients.length})</SectionLabel>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {notice.recipients.map((recipient) => {
                 const [firstName, ...rest] = recipient.name.split(' ')
                 return (
                   <div
                     key={recipient.id}
-                    className="flex items-center gap-3 rounded-lg border border-border-light bg-surface-subtle p-2"
+                    className="flex items-center gap-4 rounded-lg border border-border-light bg-surface-subtle p-2"
                   >
                     <span
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-on-primary"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[16px] font-bold text-on-primary"
                       style={{ backgroundColor: avatarColorFor(recipient.id) }}
                     >
                       {initialsOf(firstName, rest.join(' '))}
@@ -95,7 +95,7 @@ export default function NoticeDetail() {
           </div>
         </section>
 
-        <aside className="rounded-xl border border-border-light bg-surface-container-lowest px-unit-lg py-1.5 shadow-sm">
+        <aside className="rounded-xl border border-border-light bg-surface-container-lowest px-unit-lg py-2 shadow-sm">
           <DetailRow label="Status">
             <StatusPill status={notice.status} />
           </DetailRow>
